@@ -1,0 +1,317 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// USUARIOS (ADMINISTRADORES / STAFF)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("admin") // admin, staff
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// CATEGORÍAS
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  image       String?
+  parentId    String?
+  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToCategory")
+  products    Product[]
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+// MARCAS
+model Brand {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  logo        String?
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+}
+
+// PRODUCTOS
+model Product {
+  id               String                 @id @default(cuid())
+  sku              String                 @unique
+  name             String
+  slug             String                 @unique
+  description      String                 @db.Text
+  shortDescription String?
+  price            Float
+  compareAtPrice   Float?
+  costPrice        Float?
+  stock            Int                    @default(0)
+  categoryId       String
+  category         Category               @relation(fields: [categoryId], references: [id])
+  brandId          String?
+  brand            Brand?                 @relation(fields: [brandId], references: [id])
+  images           ProductImage[]
+  specifications   ProductSpecification[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  technicalSheet   String?
+  isActive         Boolean                @default(true)
+  isFeatured       Boolean                @default(false)
+  isNew            Boolean                @default(false)
+  purchaseItems    PurchaseOrderItem[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([slug])
+  @@index([sku])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([isNew])
+}
+
+// IMÁGENES DE PRODUCTOS
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
+
+// ESPECIFICACIONES DE PRODUCTOS
+model ProductSpecification {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
+
+// CARRITOS
+model Cart {
+  id         String     @id @default(cuid())
+  customerId String?
+  customer   Customer?  @relation(fields: [customerId], references: [id])
+  items      CartItem[]
+  subtotal   Float      @default(0)
+  total      Float      @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([customerId])
+}
+
+// ITEMS DEL CARRITO
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+  subtotal  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cartId])
+  @@index([productId])
+}
+
+// CLIENTES
+model Customer {
+  id              String    @id @default(cuid())
+  firstName       String
+  lastName        String
+  email           String    @unique
+  phone           String
+  company         String?
+  taxId           String?
+  isBusinessClient Boolean   @default(false)
+  passwordHash    String
+  addresses       Address[]
+  orders          Order[]
+  carts           Cart[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([email])
+}
+
+// DIRECCIONES
+model Address {
+  id                 String     @id @default(cuid())
+  customerId         String
+  customer           Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  firstName          String
+  lastName           String
+  company            String?
+  address1           String
+  address2           String?
+  city               String
+  state              String
+  postalCode         String
+  country            String     @default("Ecuador")
+  phone              String
+  isDefault          Boolean    @default(false)
+  // Relations removed from Address side as Order now snapshots data
+
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([customerId])
+}
+
+// ÓRDENES
+model Order {
+  id                String      @id @default(cuid())
+  orderNumber       String      @unique
+  customerId        String
+  customer          Customer    @relation(fields: [customerId], references: [id])
+  items             OrderItem[]
+  subtotal          Float
+  shippingCost      Float
+  tax               Float
+  total             Float
+  status            OrderStatus @default(PENDING)
+  // Snapshot of Shipping Address
+  shippingName       String
+  shippingAddress1   String
+  shippingAddress2   String?
+  shippingCity       String
+  shippingState      String
+  shippingPostalCode String
+  shippingCountry    String
+  shippingPhone      String
+
+  // Snapshot of Billing Address
+  billingName        String?
+  billingAddress1    String?
+  billingAddress2    String?
+  billingCity        String?
+  billingState       String?
+  billingPostalCode  String?
+  billingCountry     String?
+  billingPhone       String?
+  shippingMethod    String
+  notes             String?     @db.Text
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([orderNumber])
+  @@index([customerId])
+  @@index([status])
+}
+
+// ITEMS DE ORDEN
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  productName String
+  productSku  String
+  quantity    Int
+  price       Float
+  subtotal    Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ENUM DE ESTADOS DE ORDEN
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// PROVEEDORES
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  contact   String?
+  email     String?
+  phone     String?
+  orders    PurchaseOrder[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ÓRDENES DE COMPRA (INGRESO A BODEGA)
+model PurchaseOrder {
+  id              String              @id @default(cuid())
+  invoiceNumber   String              @unique // Número de factura física
+  supplierId      String
+  supplier        Supplier            @relation(fields: [supplierId], references: [id])
+  date            DateTime            @default(now())
+  status          PurchaseOrderStatus @default(PENDING)
+  items           PurchaseOrderItem[]
+  totalAmount     Float               @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([invoiceNumber])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+  quantity        Int
+  unitCost        Float         // Costo unitario al momento de compra
+  totalCost       Float
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+}
+
+enum PurchaseOrderStatus {
+  PENDING
+  RECEIVED
+  CANCELLED
+}

@@ -1,0 +1,241 @@
+[
+  {
+    "id": "prod-17",
+    "sku": "KOH-TIN-001",
+    "name": "Tina Independiente Moderna Blanca",
+    "slug": "tina-independiente-moderna-blanca",
+    "description": "Tina independiente de acrílico reforzado. Diseño oval contemporáneo. Capacidad 220 litros. Respaldo ergonómico. Incluye desagüe cromado. Acabado blanco brillante.",
+    "shortDescription": "Tina freestanding acrílica moderna",
+    "price": 18500,
+    "compareAtPrice": 21000,
+    "stock": 3,
+    "categoryId": "cat-6",
+    "brandId": "brand-6",
+    "images": [
+      {
+        "id": "img-17-1",
+        "productId": "prod-17",
+        "url": "https://placehold.co/600x400/e0e0e0/666?text=Producto",
+        "alt": "Tina moderna",
+        "order": 0
+      },
+      {
+        "id": "img-17-2",
+        "productId": "prod-17",
+        "url": "https://placehold.co/600x400/e0e0e0/666?text=Producto",
+        "alt": "Tina moderna ambiente",
+        "order": 1
+      }
+    ],
+    "specifications": [
+      {
+        "id": "spec_1771297497526_0",
+        "productId": "prod-17",
+        "key": "Material",
+        "value": "Acrílico reforzado",
+        "order": 0
+      },
+      {
+        "id": "spec_1771297497526_1",
+        "productId": "prod-17",
+        "key": "Color",
+        "value": "Blanco brillante",
+        "order": 1
+      },
+      {
+        "id": "spec_1771297497526_2",
+        "productId": "prod-17",
+        "key": "Capacidad",
+        "value": "220 litros",
+        "order": 2
+      },
+      {
+        "id": "spec_1771297497526_3",
+        "productId": "prod-17",
+        "key": "Dimensiones",
+        "value": "170 x 75 x 60 cm",
+        "order": 3
+      },
+      {
+        "id": "spec_1771297497526_4",
+        "productId": "prod-17",
+        "key": "Tipo",
+        "value": "Independiente (freestanding)",
+        "order": 4
+      }
+    ],
+    "isActive": true,
+    "isFeatured": true,
+    "isNew": false,
+    "createdAt": "2025-11-25T00:00:00.000Z",
+    "updatedAt": "2026-02-17T03:04:57.576Z",
+    "costPrice": "2000"
+  },
+  {
+    "id": "prod-18",
+    "sku": "EDC-LLP-001",
+    "name": "Llave de Paso Esfera 1/2\" Cromada",
+    "slug": "llave-paso-esfera-12-cromada",
+    "description": "Válvula de paso tipo esfera de 1/2 pulgada. Cuerpo de latón cromado. Manija tipo mariposa. Cierre hermético. Uso rudo para instalaciones hidráulicas.",
+    "shortDescription": "Válvula de esfera 1/2\" cromada",
+    "price": 185,
+    "stock": 100,
+    "categoryId": "cat-7",
+    "brandId": "brand-1",
+    "images": [
+      {
+        "id": "img-18-1",
+        "productId": "prod-18",
+        "url": "https://placehold.co/600x400/e0e0e0/666?text=Producto",
+        "alt": "Llave de paso",
+        "order": 1
+      }
+    ],
+    "specifications": [
+      {
+        "id": "spec-18-1",
+        "productId": "prod-18",
+        "key": "Material",
+        "value": "Latón cromado",
+        "order": 1
+      },
+      {
+        "id": "spec-18-2",
+        "productId": "prod-18",
+        "key": "Diámetro",
+        "value": "1/2\"",
+        "order": 2
+      },
+      {
+        "id": "spec-18-3",
+        "productId": "prod-18",
+        "key": "Tipo",
+        "value": "Esfera",
+        "order": 3
+      },
+      {
+        "id": "spec-18-4",
+        "productId": "prod-18",
+        "key": "Conexión",
+        "value": "Roscada",
+        "order": 4
+      }
+    ],
+    "isActive": true,
+    "isFeatured": false,
+    "isNew": false,
+    "createdAt": "2025-03-10T00:00:00.000Z",
+    "updatedAt": "2025-03-10T00:00:00.000Z"
+  },
+  {
+    "sku": "jss061171301cb",
+    "name": "EGO PURE ALARGADO",
+    "slug": "ego-pure-alargado",
+    "description": "Incluye:\nAsiento Forli slow down,\nHerraje dual flush,\nBotón Dual Flush,\nSet de Anclaje Taza Piso,\nSello de Cera, Tapas de Anclaje",
+    "shortDescription": "One Piece Alargado Ahorra más del 40% de agua Medidas: 76.2 x 43 x 65 cm",
+    "price": "119",
+    "compareAtPrice": "",
+    "stock": "10",
+    "categoryId": "cat-1-1",
+    "brandId": "brand-2",
+    "images": [
+      {
+        "id": "img_1771300011561_0",
+        "productId": "",
+        "url": "/images/products/product_1771299980943.png",
+        "alt": "Captura de pantalla 2026-02-16 a la(s) 9.52.48 p. m..png",
+        "order": 0
+      }
+    ],
+    "specifications": [],
+    "isActive": true,
+    "isFeatured": true,
+    "isNew": true,
+    "costPrice": "98",
+    "technicalSheet": "/documents/ficha_1771299984986.pdf",
+    "id": "prod_1771300011836_fz59azuox",
+    "createdAt": "2026-02-17T03:46:51.836Z",
+    "updatedAt": "2026-02-17T03:46:51.836Z"
+  },
+  {
+    "sku": "JSS061171301CB",
+    "name": "EGO PURE ALARGADO",
+    "slug": "ego-pure-alargado",
+    "description": "Incluye:\nAsiento Forli slow down,\nHerraje dual flush,\nBotón Dual Flush,\nSet de Anclaje Taza Piso,\nSello de Cera, Tapas de Anclaje",
+    "shortDescription": "One Piece Alargado Ahorra más del 40% de agua Medidas: 76.2 x 43 x 65 cm",
+    "price": "119.80",
+    "compareAtPrice": "",
+    "stock": 0,
+    "categoryId": "cat-1-1",
+    "brandId": "brand-2",
+    "images": [
+      {
+        "id": "img_1771300730139_0",
+        "productId": "",
+        "url": "/images/products/product_1771300704345.png",
+        "alt": "Captura de pantalla 2026-02-16 a la(s) 9.52.48 p. m..png",
+        "order": 0
+      }
+    ],
+    "specifications": [],
+    "isActive": true,
+    "isFeatured": true,
+    "isNew": true,
+    "costPrice": "89",
+    "technicalSheet": "/documents/ficha_1771300708759.pdf",
+    "id": "prod_1771300730404_ob7hugo3k",
+    "createdAt": "2026-02-17T03:58:50.404Z",
+    "updatedAt": "2026-02-17T03:58:50.404Z"
+  },
+  {
+    "sku": "78t6787",
+    "name": "hyaaalla",
+    "slug": "hyaaalla",
+    "description": "jnjkkkk",
+    "shortDescription": "jnjhjk",
+    "price": "20",
+    "compareAtPrice": "",
+    "stock": "20",
+    "categoryId": "cat-2",
+    "brandId": "brand-1",
+    "images": [],
+    "specifications": [],
+    "isActive": true,
+    "isFeatured": false,
+    "isNew": false,
+    "costPrice": "10",
+    "id": "prod_1771300795231_2atb6u1x8",
+    "createdAt": "2026-02-17T03:59:55.231Z",
+    "updatedAt": "2026-02-17T03:59:55.231Z"
+  },
+  {
+    "sku": "js0061171301cb",
+    "name": "INODORO EGO PURE ALARGADO",
+    "slug": "inodoro-ego-pure-alargado",
+    "description": "INCLUYE ASIENTO ",
+    "shortDescription": "ONE PIECE ",
+    "price": "108.90",
+    "compareAtPrice": "",
+    "stock": "10",
+    "categoryId": "cat-1-1",
+    "brandId": "brand-2",
+    "images": [
+      {
+        "id": "img_1771301181015_0",
+        "productId": "",
+        "url": "/images/products/product_1771301176362.png",
+        "alt": "Captura de pantalla 2026-02-16 a la(s) 9.52.48 p. m..png",
+        "order": 0
+      }
+    ],
+    "specifications": [],
+    "isActive": true,
+    "isFeatured": true,
+    "isNew": true,
+    "costPrice": "89",
+    "technicalSheet": "/documents/ficha_1771301179835.pdf",
+    "id": "prod_1771301181217_wn7z70dw8",
+    "createdAt": "2026-02-17T04:06:21.217Z",
+    "updatedAt": "2026-02-17T04:06:21.217Z"
+  }
+]

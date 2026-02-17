@@ -1,0 +1,142 @@
+import { Category } from '@/types';
+
+export const mockCategories: Category[] = [
+  {
+    id: 'cat-1',
+    name: 'Sanitarios',
+    slug: 'sanitarios',
+    description: 'Inodoros, mingitorios y WCs de alta calidad',
+    image: '/images/categories/sanitarios.jpg',
+    order: 1,
+  },
+  {
+    id: 'cat-1-1',
+    name: 'Inodoros',
+    slug: 'inodoros',
+    description: 'Inodoros de una y dos piezas',
+    image: '/images/categories/inodoros.jpg',
+    parentId: 'cat-1',
+    order: 1,
+  },
+  {
+    id: 'cat-1-2',
+    name: 'Mingitorios',
+    slug: 'mingitorios',
+    description: 'Mingitorios para baños comerciales',
+    image: '/images/categories/mingitorios.jpg',
+    parentId: 'cat-1',
+    order: 2,
+  },
+  {
+    id: 'cat-2',
+    name: 'Griferías',
+    slug: 'griferias',
+    description: 'Llaves mezcladoras y griferías para baño y cocina',
+    image: '/images/categories/griferias.jpg',
+    order: 2,
+  },
+  {
+    id: 'cat-2-1',
+    name: 'Griferías para Baño',
+    slug: 'griferias-bano',
+    description: 'Llaves para lavabo y regadera',
+    image: '/images/categories/griferias-bano.jpg',
+    parentId: 'cat-2',
+    order: 1,
+  },
+  {
+    id: 'cat-2-2',
+    name: 'Griferías para Cocina',
+    slug: 'griferias-cocina',
+    description: 'Llaves mezcladoras para fregadero',
+    image: '/images/categories/griferias-cocina.jpg',
+    parentId: 'cat-2',
+    order: 2,
+  },
+  {
+    id: 'cat-3',
+    name: 'Lavamanos',
+    slug: 'lavamanos',
+    description: 'Lavabos, lavamanos y muebles de baño',
+    image: '/images/categories/lavamanos.jpg',
+    order: 3,
+  },
+  {
+    id: 'cat-3-1',
+    name: 'Lavabos de Sobreponer',
+    slug: 'lavabos-sobreponer',
+    description: 'Lavabos tipo vessel y de sobreponer',
+    image: '/images/categories/lavabos-sobreponer.jpg',
+    parentId: 'cat-3',
+    order: 1,
+  },
+  {
+    id: 'cat-3-2',
+    name: 'Lavabos Empotrados',
+    slug: 'lavabos-empotrados',
+    description: 'Lavabos de empotrar y bajo cubierta',
+    image: '/images/categories/lavabos-empotrados.jpg',
+    parentId: 'cat-3',
+    order: 2,
+  },
+  {
+    id: 'cat-4',
+    name: 'Regaderas',
+    slug: 'regaderas',
+    description: 'Regaderas de mano, fijas y sistemas de ducha',
+    image: '/images/categories/regaderas.jpg',
+    order: 4,
+  },
+  {
+    id: 'cat-5',
+    name: 'Accesorios para Baño',
+    slug: 'accesorios-bano',
+    description: 'Toalleros, jaboneras, portapapeles y más',
+    image: '/images/categories/accesorios.jpg',
+    order: 5,
+  },
+  {
+    id: 'cat-6',
+    name: 'Tinas',
+    slug: 'tinas',
+    description: 'Tinas de baño independientes y empotradas',
+    image: '/images/categories/tinas.jpg',
+    order: 6,
+  },
+  {
+    id: 'cat-7',
+    name: 'Llaves de Paso',
+    slug: 'llaves-paso',
+    description: 'Válvulas y llaves de paso para agua',
+    image: '/images/categories/llaves-paso.jpg',
+    order: 7,
+  },
+  {
+    id: 'cat-8',
+    name: 'Fregaderos',
+    slug: 'fregaderos',
+    description: 'Fregaderos de acero inoxidable y granito',
+    image: '/images/categories/fregaderos.jpg',
+    order: 8,
+  },
+];
+
+// Helper function to get category by slug
+export function getCategoryBySlug(slug: string): Category | undefined {
+  return mockCategories.find((cat) => cat.slug === slug);
+}
+
+// Helper function to get category by id
+export function getCategoryById(id: string): Category | undefined {
+  return mockCategories.find((cat) => cat.id === id);
+}
+
+// Helper function to get main categories (no parent)
+export function getMainCategories(): Category[] {
+  return mockCategories.filter((cat) => !cat.parentId);
+}
+
+// Helper function to get subcategories
+export function getSubcategories(parentId: string): Category[] {
+  return mockCategories.filter((cat) => cat.parentId === parentId);
+}
