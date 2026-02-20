@@ -10,16 +10,17 @@ import path from 'path';
  */
 const MAGIC_BYTES: Record<string, { bytes: number[]; offset: number }[]> = {
   'image/jpeg': [
-    { bytes: [0xff, 0xd8, 0xff], offset: 0 }, // JPEG
+    { bytes: [0xff, 0xd8], offset: 0 }, // JPEG (solo primeros 2 bytes - más compatible)
   ],
   'image/png': [
-    { bytes: [0x89, 0x50, 0x4e, 0x47], offset: 0 }, // PNG
+    { bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], offset: 0 }, // PNG signature completa
   ],
   'image/webp': [
-    { bytes: [0x52, 0x49, 0x46, 0x46], offset: 0 }, // RIFF (WebP container)
+    { bytes: [0x52, 0x49, 0x46, 0x46], offset: 0 }, // RIFF
+    { bytes: [0x57, 0x45, 0x42, 0x50], offset: 8 }, // WEBP
   ],
   'image/jpg': [
-    { bytes: [0xff, 0xd8, 0xff], offset: 0 }, // JPEG alias
+    { bytes: [0xff, 0xd8], offset: 0 }, // JPEG alias
   ],
   'application/pdf': [
     { bytes: [0x25, 0x50, 0x44, 0x46], offset: 0 }, // %PDF
@@ -42,6 +43,15 @@ function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
   const signatures = MAGIC_BYTES[mimeType];
   if (!signatures) return false;
 
+  // Para WebP, verificar ambas firmas (RIFF y WEBP)
+  if (mimeType === 'image/webp') {
+    return signatures.every(({ bytes, offset }) => {
+      if (buffer.length < offset + bytes.length) return false;
+      return bytes.every((byte, i) => buffer[offset + i] === byte);
+    });
+  }
+
+  // Para otros formatos, verificar cualquier firma
   return signatures.some(({ bytes, offset }) => {
     if (buffer.length < offset + bytes.length) return false;
     return bytes.every((byte, i) => buffer[offset + i] === byte);
@@ -68,14 +78,22 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
 
     if (!file) {
+      console.error('[Upload] No se proporcionó archivo');
       return NextResponse.json(
         { error: 'No se proporcionó un archivo' },
         { status: 400 }
       );
     }
 
+    console.log('[Upload] Archivo recibido:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+
     // Validar tipo MIME declarado por el cliente (primera verificación)
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      console.error('[Upload] Tipo MIME no permitido:', file.type);
       return NextResponse.json(
         { error: 'Tipo de archivo no permitido. Solo JPG, PNG, WebP y PDF' },
         { status: 400 }
@@ -87,6 +105,7 @@ export async function POST(request: NextRequest) {
     const maxSizeLabel = file.type === 'application/pdf' ? '10MB' : '5MB';
 
     if (file.size > maxSize) {
+      console.error('[Upload] Archivo muy grande:', file.size, 'bytes, máx:', maxSize);
       return NextResponse.json(
         { error: `El archivo es demasiado grande. Máximo ${maxSizeLabel}` },
         { status: 400 }
@@ -95,6 +114,7 @@ export async function POST(request: NextRequest) {
 
     // Rechazar archivos vacíos
     if (file.size === 0) {
+      console.error('[Upload] Archivo vacío');
       return NextResponse.json(
         { error: 'El archivo está vacío' },
         { status: 400 }
@@ -104,8 +124,13 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    console.log('[Upload] Magic bytes (primeros 12):',
+      Array.from(buffer.slice(0, 12)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+    );
+
     // Validar magic bytes (segunda verificación — no confiar en el tipo declarado)
     if (!validateMagicBytes(buffer, file.type)) {
+      console.error('[Upload] Magic bytes inválidos para tipo:', file.type);
       return NextResponse.json(
         { error: 'El contenido del archivo no coincide con su tipo declarado' },
         { status: 400 }
@@ -116,6 +141,7 @@ export async function POST(request: NextRequest) {
     const originalExt = path.extname(file.name).toLowerCase();
     const allowedExts = ALLOWED_EXTENSIONS[file.type] ?? [];
     if (!allowedExts.includes(originalExt)) {
+      console.error('[Upload] Extensión no permitida:', originalExt, 'para tipo:', file.type);
       return NextResponse.json(
         { error: `Extensión de archivo no permitida para el tipo ${file.type}` },
         { status: 400 }
@@ -134,8 +160,11 @@ export async function POST(request: NextRequest) {
     const publicDir = path.resolve(process.cwd(), 'public', subDir);
     const filepath = path.resolve(publicDir, filename);
 
+    console.log('[Upload] Guardando en:', filepath);
+
     // CRÍTICO: Verificar que el filepath final está dentro del directorio esperado (path traversal)
     if (!filepath.startsWith(publicDir)) {
+      console.error('[Upload] Path traversal detectado:', filepath);
       return NextResponse.json(
         { error: 'Ruta de archivo inválida' },
         { status: 400 }
@@ -149,11 +178,13 @@ export async function POST(request: NextRequest) {
 
     const url = `/${subDir.replace(/\\/g, '/')}/${filename}`;
 
+    console.log('[Upload] Archivo guardado exitosamente. URL:', url);
+
     return NextResponse.json({ url }, { status: 201 });
   } catch (error) {
-    console.error('Error al subir archivo:', error);
+    console.error('[Upload] Error al subir archivo:', error);
     return NextResponse.json(
-      { error: 'Error al subir el archivo' },
+      { error: 'Error al subir el archivo: ' + (error instanceof Error ? error.message : 'Error desconocido') },
       { status: 500 }
     );
   }
