@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Product, Category, Brand } from '@/types';
 import { Order, SalesFilters } from '@/types/sales';
 import { calculateSalesMetrics } from '@/lib/sales-analytics';
-import { Package, FolderTree, Tag, ShoppingCart, TrendingUp, DollarSign, AlertTriangle } from 'lucide-react';
+import { Package, FolderTree, Tag, ShoppingCart, TrendingUp, DollarSign, AlertTriangle, Users, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SalesOverview } from '@/components/admin/SalesOverview';
@@ -187,10 +187,10 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { href: '/admin/productos/nuevo', icon: Package, label: 'Nuevo Producto' },
             { href: '/admin/categorias', icon: FolderTree, label: 'Ver Categorías' },
-            { href: '/admin/marcas', icon: Tag, label: 'Ver Marcas' },
-            { href: '/', icon: TrendingUp, label: 'Ver Tienda', external: true },
+            { href: '/admin/pedidos', icon: ShoppingCart, label: 'Pedidos' },
+            { href: '/admin/usuarios', icon: Users, label: 'Usuarios' },
+            { href: '/admin/compras', icon: Truck, label: 'Compras' },
           ].map(({ href, icon: Icon, label, external }) => (
             <Link key={label} href={href} target={external ? '_blank' : undefined}>
               <Button
