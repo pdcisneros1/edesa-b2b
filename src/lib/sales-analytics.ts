@@ -6,8 +6,10 @@ export function calculateSalesMetrics(
   products: Product[],
   filters?: SalesFilters
 ): SalesMetrics {
+  // Statuses that count as sales (exclude pending/cancelled)
+  const COUNTED_STATUSES = new Set(['completed', 'pagado', 'en_proceso', 'enviado', 'entregado']);
   // Filtrar órdenes según los filtros
-  let filteredOrders = orders.filter((order) => order.status === 'completed');
+  let filteredOrders = orders.filter((order) => COUNTED_STATUSES.has(order.status));
 
   if (filters?.startDate) {
     filteredOrders = filteredOrders.filter(
@@ -133,7 +135,8 @@ export function getSalesByPeriod(
   period: 'day' | 'week' | 'month' | 'year',
   filters?: SalesFilters
 ): SalesByPeriod[] {
-  const filteredOrders = orders.filter((order) => order.status === 'completed');
+  const COUNTED_STATUSES2 = new Set(['completed', 'pagado', 'en_proceso', 'enviado', 'entregado']);
+  const filteredOrders = orders.filter((order) => COUNTED_STATUSES2.has(order.status));
   const salesMap = new Map<string, SalesByPeriod>();
 
   filteredOrders.forEach((order) => {

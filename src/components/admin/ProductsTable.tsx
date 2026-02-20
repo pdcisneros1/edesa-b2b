@@ -15,7 +15,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Eye } from 'lucide-react';
+import { Edit, Trash2, Eye, Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { formatPrice } from '@/lib/format';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -39,6 +40,14 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
   const [products, setProducts] = useState(initialProducts);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filtered = search.trim()
+    ? products.filter((p) => {
+        const q = search.toLowerCase();
+        return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+      })
+    : products;
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -67,6 +76,31 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
 
   return (
     <>
+      {/* Search bar */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <Input
+          placeholder="Buscar por descripción o SKU..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 pr-9"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {search && (
+        <p className="text-xs text-gray-500">
+          {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'} para &quot;{search}&quot;
+        </p>
+      )}
+
       <div className="rounded-lg border bg-white">
         <Table>
           <TableHeader>
@@ -81,7 +115,14 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="py-12 text-center text-sm text-gray-500">
+                  No se encontraron productos para &quot;{search}&quot;
+                </TableCell>
+              </TableRow>
+            )}
+            {filtered.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>
                   <div className="relative h-12 w-12 overflow-hidden rounded-md bg-gray-100 border border-gray-200">

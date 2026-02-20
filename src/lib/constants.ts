@@ -93,3 +93,13 @@ export const SOCIAL_LINKS = {
   instagram: 'https://instagram.com/edesaventas',
   twitter: 'https://twitter.com/edesaventas',
 };
+
+// Transferencia bancaria — configurar en .env.local con prefijo NEXT_PUBLIC_
+export const BANK_INFO = {
+  bankName:       process.env.NEXT_PUBLIC_BANK_NAME       ?? 'Banco Pichincha',
+  accountNumber:  process.env.NEXT_PUBLIC_BANK_ACCOUNT    ?? '2200-XXXXXXXXX',
+  accountType:    process.env.NEXT_PUBLIC_BANK_ACCOUNT_TYPE ?? 'Cuenta Corriente',
+  companyName:    process.env.NEXT_PUBLIC_COMPANY_NAME    ?? 'EDESA VENTAS S.A.',
+  companyRuc:     process.env.NEXT_PUBLIC_COMPANY_RUC     ?? '1790XXXXXXXX001',
+  transferNote:   'Indicar número de pedido como referencia.',
+};

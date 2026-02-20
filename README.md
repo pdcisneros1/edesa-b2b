@@ -2,15 +2,30 @@
 
 E-commerce profesional para productos de acabados de construcción (sanitarios, griferías, lavamanos, etc.) en Ecuador.
 
-![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.12-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38bdf8)
 ![shadcn/ui](https://img.shields.io/badge/shadcn/ui-latest-000000)
+![Production Ready](https://img.shields.io/badge/Production-Ready-success)
+
+---
+
+## Estado del Proyecto
+
+**LISTO PARA PRODUCCIÓN** - Ver [PRODUCTION-READY.md](./PRODUCTION-READY.md) para resumen ejecutivo.
+
+**Documentación de Deployment:**
+- [VERCEL-DEPLOY.md](./VERCEL-DEPLOY.md) - Guía rápida (10 minutos)
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Guía completa (exhaustiva)
+- [PRODUCTION-CHECKLIST.md](./PRODUCTION-CHECKLIST.md) - Checklist paso a paso
+
+**Build status:** Compilando exitosamente (34 rutas, 0 errores)
 
 ---
 
 ## 📋 Tabla de Contenidos
 
+- [Estado del Proyecto](#estado-del-proyecto)
 - [Características](#-características)
 - [Tecnologías](#-tecnologías)
 - [Instalación](#-instalación)
@@ -19,6 +34,8 @@ E-commerce profesional para productos de acabados de construcción (sanitarios, 
 - [Panel de Administración](#-panel-de-administración)
 - [Credenciales](#-credenciales)
 - [Funcionalidades](#-funcionalidades)
+
+**[Ver índice completo de documentación →](./DOCS-INDEX.md)**
 
 ---
 
@@ -65,9 +82,11 @@ E-commerce profesional para productos de acabados de construcción (sanitarios, 
 
 ### Backend
 - **Next.js API Routes** - Endpoints REST
-- **JSON Storage** - Almacenamiento en archivos JSON (MVP)
+- **Prisma ORM** - Database access layer
+- **PostgreSQL** - Database (Supabase)
 - **JWT con jose** - Autenticación
-- **Node.js File System** - Manejo de archivos
+- **Bcrypt** - Password hashing
+- **Rate Limiting** - Protección contra ataques
 
 ### Utilidades
 - **Sonner** - Notificaciones toast
@@ -81,12 +100,14 @@ E-commerce profesional para productos de acabados de construcción (sanitarios, 
 ### Prerrequisitos
 - Node.js 18+
 - npm o pnpm
+- PostgreSQL database (Supabase recomendado)
 
-### Pasos
+### Desarrollo Local
 
 1. **Clonar el repositorio**
 ```bash
-cd /Users/pablocisneros/Desktop/EDESA\ VENTAS/edesa-ventas
+git clone <repo-url>
+cd edesa-ventas
 ```
 
 2. **Instalar dependencias**
@@ -97,17 +118,34 @@ npm install
 3. **Configurar variables de entorno**
 ```bash
 cp .env.example .env
+# Editar .env con tus credenciales de Supabase y JWT secret
 ```
 
-4. **Iniciar servidor de desarrollo**
+4. **Configurar base de datos**
+```bash
+# Generar Prisma Client
+npm run db:generate
+
+# Aplicar migraciones (crear tablas)
+npm run db:push
+
+# Cargar datos iniciales (categorías, marcas, 1740 productos)
+npm run db:seed
+```
+
+5. **Iniciar servidor de desarrollo**
 ```bash
 npm run dev
 ```
 
-5. **Abrir en navegador**
+6. **Abrir en navegador**
 ```
 http://localhost:3000
 ```
+
+### Despliegue a Producción
+
+Ver **[DEPLOYMENT.md](./DEPLOYMENT.md)** para guía completa de despliegue en Vercel + Supabase.
 
 ---
 
@@ -306,18 +344,28 @@ El dashboard tiene **2 pestañas principales**:
 - [x] Ventas por categoría
 - [x] Cálculo de márgenes de ganancia
 
+### ✅ Completado - Seguridad y B2B
+
+- [x] Migración completa a Prisma + PostgreSQL (Supabase)
+- [x] Sistema de autenticación B2B (admin, ferretería, minorista)
+- [x] Protección de precios (PriceGate para usuarios no autenticados)
+- [x] Gestión de órdenes de compra (Purchase Orders)
+- [x] Gestión de usuarios y permisos (admin dashboard)
+- [x] Rate limiting en login, registro y checkout
+- [x] Headers HTTP de seguridad (CSP, HSTS, X-Frame-Options)
+- [x] Sistema de pedidos real con estados (pendiente → confirmado → enviado → entregado)
+- [x] Precios mayoristas diferenciados (wholesalePrice)
+- [x] SEO optimizado (metadata, sitemap dinámico, robots.txt)
+
 ### 🚧 Por Implementar (Fase 2)
 
-- [ ] Pasarela de pagos (PayPhone, Stripe)
-- [ ] Gestión real de órdenes
-- [ ] Sistema de usuarios/clientes
-- [ ] Historial de compras
-- [ ] Envío de emails (confirmaciones)
-- [ ] Notificaciones en tiempo real
+- [ ] Pasarela de pagos (PlaceToPay, Stripe)
+- [ ] Sistema de emails (SMTP para confirmaciones de pedidos)
+- [ ] Notificaciones en tiempo real (WebSockets)
 - [ ] Exportación de reportes (Excel/PDF)
 - [ ] Gestión de cupones/descuentos
 - [ ] Sistema de reviews/reseñas
-- [ ] Migración a PostgreSQL + Prisma
+- [ ] Migración de rate limiting a Redis (multi-instancia)
 
 ---
 

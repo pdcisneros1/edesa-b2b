@@ -72,6 +72,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
       description: '',
       shortDescription: '',
       price: 0,
+      wholesalePrice: undefined,
       compareAtPrice: undefined,
       stock: 0,
       categoryId: '',
@@ -277,6 +278,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
               <CardTitle>Precios y Costos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Fila 1: Costo + Precio minorista */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="costPrice">Costo de Compra (Fábrica)</Label>
@@ -287,13 +289,13 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                     {...register('costPrice')}
                     placeholder="0.00"
                   />
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500">
                     Precio al que compras el producto
                   </p>
                 </div>
 
                 <div>
-                  <Label htmlFor="price">Precio de Venta *</Label>
+                  <Label htmlFor="price">Precio Minorista *</Label>
                   <Input
                     id="price"
                     type="number"
@@ -304,13 +306,34 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                     })}
                     placeholder="0.00"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Precio público de referencia</p>
                   {errors.price && (
                     <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>
                   )}
                 </div>
               </div>
 
+              {/* Fila 2: Precio mayorista + Precio de comparación */}
               <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="wholesalePrice" className="flex items-center gap-2">
+                    Precio Mayorista (Ferreterías)
+                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 rounded px-1.5 py-0.5 uppercase tracking-wide">
+                      B2B
+                    </span>
+                  </Label>
+                  <Input
+                    id="wholesalePrice"
+                    type="number"
+                    step="0.01"
+                    {...register('wholesalePrice')}
+                    placeholder="0.00"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Solo visible para clientes ferretería logueados
+                  </p>
+                </div>
+
                 <div>
                   <Label htmlFor="compareAtPrice">Precio de Comparación</Label>
                   <Input
@@ -320,32 +343,47 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                     {...register('compareAtPrice')}
                     placeholder="0.00"
                   />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Precio antes del descuento (opcional)
+                  <p className="mt-1 text-xs text-gray-500">
+                    Precio anterior para mostrar descuento (opcional)
                   </p>
                 </div>
+              </div>
 
-                {watch('costPrice') && watch('price') && (
+              {/* Panel de márgenes */}
+              {watch('costPrice') && watch('price') && (
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex flex-col justify-center p-3 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm font-medium text-green-900">
-                      Margen de Ganancia
+                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">
+                      Margen minorista
                     </p>
                     <p className="text-2xl font-bold text-green-600">
                       {(
-                        ((watch('price') - (watch('costPrice') || 0)) /
-                          watch('price')) *
-                        100
-                      ).toFixed(1)}
-                      %
+                        ((watch('price') - (watch('costPrice') || 0)) / watch('price')) * 100
+                      ).toFixed(1)}%
                     </p>
                     <p className="text-xs text-green-700">
-                      Ganancia: ${(
-                        watch('price') - (watch('costPrice') || 0)
-                      ).toFixed(2)}
+                      Ganancia: ${(watch('price') - (watch('costPrice') || 0)).toFixed(2)}
                     </p>
                   </div>
-                )}
-              </div>
+
+                  {watch('wholesalePrice') && (
+                    <div className="flex flex-col justify-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">
+                        Margen mayorista
+                      </p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {(
+                          (((watch('wholesalePrice') ?? 0) - (watch('costPrice') || 0)) /
+                            (watch('wholesalePrice') ?? 1)) * 100
+                        ).toFixed(1)}%
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        Ganancia: ${((watch('wholesalePrice') ?? 0) - (watch('costPrice') || 0)).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 

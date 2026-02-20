@@ -1,0 +1,78 @@
+[
+  {
+    "id": "order_1771384224196_otqfk",
+    "orderNumber": "EDV-20260218-60396",
+    "customerId": "guest",
+    "customerName": "edwin alvarez",
+    "customerEmail": "acabadosalvarez@gmail.com",
+    "customerPhone": "0992686420",
+    "customerCompany": "ACABADOS ALVAREZ",
+    "customerTaxId": "0104151204001",
+    "items": [
+      {
+        "id": "order_1771384224196_otqfk_item0",
+        "orderId": "order_1771384224196_otqfk",
+        "productId": "cmlq4pc3r0001rhfhb2cz5dig",
+        "productSku": "JS0061171301CB",
+        "productName": "INODORO EGO PURE ALARGADO",
+        "quantity": 1,
+        "unitPrice": 108.9,
+        "subtotal": 108.9
+      }
+    ],
+    "subtotal": 108.9,
+    "tax": 16.34,
+    "shipping": 5,
+    "total": 130.24,
+    "status": "cancelado",
+    "paymentMethod": "transferencia",
+    "notes": "",
+    "shippingAddress": {
+      "street": "pio jaramillo y mercadillo, LOJA",
+      "city": "LOJA",
+      "province": "Loja",
+      "zipCode": "110203",
+      "country": "Ecuador"
+    },
+    "createdAt": "2026-02-18T03:10:24.196Z",
+    "updatedAt": "2026-02-18T03:54:46.394Z"
+  },
+  {
+    "id": "order_1771371977129_bb9jh",
+    "orderNumber": "EDV-20260217-73942",
+    "customerId": "guest",
+    "customerName": "juan  cisneros ",
+    "customerEmail": "pdcisneros@gmail.com",
+    "customerPhone": "0992686411",
+    "customerCompany": "acabados alvarez ",
+    "customerTaxId": "0104151204001",
+    "items": [
+      {
+        "id": "order_1771371977129_bb9jh_item0",
+        "orderId": "order_1771371977129_bb9jh",
+        "productId": "cmlq4pc3r0001rhfhb2cz5dig",
+        "productSku": "JS0061171301CB",
+        "productName": "INODORO EGO PURE ALARGADO",
+        "quantity": 4,
+        "unitPrice": 108.9,
+        "subtotal": 435.6
+      }
+    ],
+    "subtotal": 435.6,
+    "tax": 65.34,
+    "shipping": 5,
+    "total": 505.94,
+    "status": "cancelado",
+    "paymentMethod": "transferencia",
+    "notes": "",
+    "shippingAddress": {
+      "street": "cuenca, jacinto flores ",
+      "city": "cuenca ",
+      "province": "Azuay",
+      "zipCode": "010104",
+      "country": "Ecuador"
+    },
+    "createdAt": "2026-02-17T23:46:17.129Z",
+    "updatedAt": "2026-02-18T03:53:30.613Z"
+  }
+]

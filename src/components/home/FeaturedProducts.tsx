@@ -5,7 +5,6 @@ import { ProductGrid } from '@/components/products/ProductGrid';
 import prisma from '@/lib/prisma';
 
 export async function FeaturedProducts() {
-  // Show featured products first; if fewer than 4, fill with most recent active products
   const featuredProducts = await prisma.product.findMany({
     where: { isFeatured: true, isActive: true },
     take: 8,
@@ -28,23 +27,31 @@ export async function FeaturedProducts() {
   if (products.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="py-12 md:py-16 bg-gray-50 border-t border-gray-100">
       <div className="container">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-end justify-between mb-8 animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1.5">
+              {isFeaturedSection ? 'Selección especial' : 'Catálogo'}
+            </p>
+            <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">
               {isFeaturedSection ? 'Productos Destacados' : 'Últimos Productos'}
             </h2>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm text-gray-500 mt-1">
               {isFeaturedSection
                 ? 'Nuestra selección de productos más populares'
                 : 'Los productos más recientemente agregados al catálogo'}
             </p>
           </div>
-          <Button asChild variant="outline" className="hidden sm:flex gap-2">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="hidden sm:flex gap-1.5 text-sm font-medium h-8"
+          >
             <Link href="/productos">
               Ver Todos
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
@@ -52,10 +59,10 @@ export async function FeaturedProducts() {
         <ProductGrid products={products as any} />
 
         <div className="mt-8 text-center sm:hidden">
-          <Button asChild variant="outline" className="gap-2">
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
             <Link href="/productos">
               Ver Todos los Productos
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>

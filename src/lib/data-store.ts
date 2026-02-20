@@ -3,6 +3,7 @@ import path from 'path';
 import type { Product } from '@/types/product';
 import type { Category } from '@/types';
 import type { Brand } from '@/types';
+import type { Order, OrderStatus } from '@/types/sales';
 
 const dataDir = path.join(process.cwd(), 'src', 'data');
 
@@ -136,4 +137,40 @@ export function deleteBrand(id: string): boolean {
 
   writeJSONFile('brands.json', filteredBrands);
   return true;
+}
+
+// ─── Orders ────────────────────────────────────────────────────────────────
+
+function readOrders(): Order[] {
+  try {
+    const filePath = path.join(dataDir, 'orders.json');
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(fileContent) as Order[];
+  } catch {
+    return [];
+  }
+}
+
+export function getStoredOrders(): Order[] {
+  return readOrders();
+}
+
+export function getStoredOrderById(id: string): Order | undefined {
+  return readOrders().find((o) => o.id === id);
+}
+
+export function createStoredOrder(order: Order): Order {
+  const orders = readOrders();
+  orders.unshift(order); // newest first
+  writeJSONFile('orders.json', orders);
+  return order;
+}
+
+export function updateStoredOrderStatus(id: string, status: OrderStatus): Order | null {
+  const orders = readOrders();
+  const index = orders.findIndex((o) => o.id === id);
+  if (index === -1) return null;
+  orders[index] = { ...orders[index], status, updatedAt: new Date().toISOString() };
+  writeJSONFile('orders.json', orders);
+  return orders[index];
 }

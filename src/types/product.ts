@@ -6,6 +6,7 @@ export interface Product {
   description: string;
   shortDescription?: string | null;
   price: number;
+  wholesalePrice?: number | null | undefined;
   costPrice?: number | null | undefined;
   compareAtPrice?: number | null | undefined;
   stock: number;

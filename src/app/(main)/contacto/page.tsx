@@ -1,206 +1,192 @@
-import { Mail, Phone, MapPin, Clock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CONTACT_INFO, SITE_NAME } from '@/lib/constants';
 
-export const metadata = {
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
   title: 'Contacto',
-  description: 'Contáctanos para cotizaciones, asesoría o cualquier consulta sobre nuestros productos',
+  description:
+    'Contáctanos para cotizaciones mayoristas, asesoría técnica o información sobre distribución de sanitarios y acabados de construcción en Ecuador.',
+  openGraph: {
+    title: 'Contacto | EDESA VENTAS',
+    description: 'Solicita cotización mayorista para tu ferretería o proyecto de construcción en Ecuador.',
+  },
 };
+
+const contactItems = [
+  {
+    icon: Phone,
+    label: 'Teléfono',
+    value: CONTACT_INFO.phone,
+    href: `tel:${CONTACT_INFO.phone}`,
+  },
+  {
+    icon: Mail,
+    label: 'Email',
+    value: CONTACT_INFO.email,
+    href: `mailto:${CONTACT_INFO.email}`,
+  },
+  {
+    icon: MapPin,
+    label: 'Dirección',
+    value: CONTACT_INFO.address,
+    href: undefined,
+  },
+  {
+    icon: Clock,
+    label: 'Horario',
+    value: 'Lun–Vie: 9:00–18:00 · Sáb: 9:00–14:00',
+    href: undefined,
+  },
+];
 
 export default function ContactPage() {
   return (
-    <div className="container py-12">
-      {/* Header */}
-      <div className="max-w-3xl mx-auto text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">
-          Contáctanos
-        </h1>
-        <p className="text-xl text-muted-foreground">
-          ¿Tienes alguna pregunta? Estamos aquí para ayudarte
-        </p>
+    <div className="bg-gray-50 min-h-screen">
+      {/* Page header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="container py-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+            Estamos aquí para ayudarte
+          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 md:text-3xl">
+            Contáctanos
+          </h1>
+          <p className="text-gray-500 mt-2 text-sm max-w-xl">
+            Para cotizaciones, asesoría técnica o información sobre distribución mayorista en Ecuador. Respondemos en menos de 24 horas.
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Contact form */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Envíanos un Mensaje</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Nombre</Label>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      placeholder="Tu nombre"
-                      required
-                    />
+      <div className="container py-10">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Contact form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 md:p-8">
+              <h2 className="text-base font-semibold text-gray-900 mb-6">Envíanos un Mensaje</h2>
+              <form className="space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                      Nombre
+                    </Label>
+                    <Input id="firstName" name="firstName" placeholder="Tu nombre" required className="h-10" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Apellido</Label>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      placeholder="Tu apellido"
-                      required
-                    />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                      Apellido
+                    </Label>
+                    <Input id="lastName" name="lastName" placeholder="Tu apellido" required className="h-10" />
                   </div>
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Correo Electrónico</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="tu@email.com"
-                      required
-                    />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      Correo Electrónico
+                    </Label>
+                    <Input id="email" name="email" type="email" placeholder="tu@email.com" required className="h-10" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="55 1234 5678"
-                      required
-                    />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                      Teléfono
+                    </Label>
+                    <Input id="phone" name="phone" type="tel" placeholder="09X XXX XXXX" required className="h-10" />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="company">Empresa (Opcional)</Label>
-                  <Input
-                    id="company"
-                    name="company"
-                    placeholder="Nombre de tu empresa"
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="company" className="text-sm font-medium text-gray-700">
+                    Empresa <span className="text-gray-400 font-normal">(opcional)</span>
+                  </Label>
+                  <Input id="company" name="company" placeholder="Nombre de tu empresa" className="h-10" />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Asunto</Label>
-                  <Input
-                    id="subject"
-                    name="subject"
-                    placeholder="¿En qué podemos ayudarte?"
-                    required
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="subject" className="text-sm font-medium text-gray-700">
+                    Asunto
+                  </Label>
+                  <Input id="subject" name="subject" placeholder="¿En qué podemos ayudarte?" required className="h-10" />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="message">Mensaje</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="message" className="text-sm font-medium text-gray-700">
+                    Mensaje
+                  </Label>
                   <Textarea
                     id="message"
                     name="message"
-                    placeholder="Cuéntanos más detalles..."
-                    rows={6}
+                    placeholder="Cuéntanos más detalles sobre tu consulta..."
+                    rows={5}
                     required
+                    className="resize-none"
                   />
                 </div>
 
-                <Button type="submit" size="lg" className="w-full sm:w-auto">
+                <Button type="submit" className="gap-2 font-semibold">
                   Enviar Mensaje
                 </Button>
               </form>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Contact info */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Información de Contacto</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Phone className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium mb-1">Teléfono</p>
-                  <a
-                    href={`tel:${CONTACT_INFO.phone}`}
-                    className="text-sm text-muted-foreground hover:text-primary"
-                  >
-                    {CONTACT_INFO.phone}
-                  </a>
-                </div>
+          {/* Contact info */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-5">Información de Contacto</h2>
+              <div className="space-y-5">
+                {contactItems.map(({ icon: Icon, label, value, href }) => (
+                  <div key={label} className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                      <Icon className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">
+                        {label}
+                      </p>
+                      {href ? (
+                        <a
+                          href={href}
+                          className="text-sm text-gray-700 hover:text-primary transition-colors"
+                        >
+                          {value}
+                        </a>
+                      ) : (
+                        <p className="text-sm text-gray-700">{value}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Mail className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium mb-1">Email</p>
-                  <a
-                    href={`mailto:${CONTACT_INFO.email}`}
-                    className="text-sm text-muted-foreground hover:text-primary"
-                  >
-                    {CONTACT_INFO.email}
-                  </a>
-                </div>
+            <div className="bg-gray-900 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageCircle className="h-4 w-4 text-green-400" />
+                <h3 className="font-semibold text-white text-sm">WhatsApp</h3>
               </div>
-
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <MapPin className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium mb-1">Dirección</p>
-                  <p className="text-sm text-muted-foreground">
-                    {CONTACT_INFO.address}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Clock className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium mb-1">Horario</p>
-                  <p className="text-sm text-muted-foreground">
-                    Lunes a Viernes: 9:00 - 18:00
-                    <br />
-                    Sábado: 9:00 - 14:00
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-primary text-primary-foreground">
-            <CardContent className="p-6">
-              <h3 className="font-semibold mb-2">WhatsApp</h3>
-              <p className="text-sm mb-4 text-primary-foreground/90">
-                ¿Necesitas una respuesta rápida? Contáctanos por WhatsApp
+              <p className="text-sm text-gray-400 mb-4 leading-relaxed">
+                ¿Necesitas respuesta rápida? Contáctanos por WhatsApp y te respondemos al instante.
               </p>
               <Button
                 asChild
-                variant="secondary"
-                className="w-full"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold gap-2"
               >
                 <a
                   href={`https://wa.me/${CONTACT_INFO.whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
+                  <MessageCircle className="h-4 w-4" />
                   Abrir WhatsApp
                 </a>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>

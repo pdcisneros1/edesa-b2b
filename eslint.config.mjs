@@ -10,6 +10,10 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Excluir directorios generados automáticamente
+  {
+    ignores: [".next/**", "node_modules/**", "prisma/generated/**", "next-env.d.ts"],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {

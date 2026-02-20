@@ -10,66 +10,74 @@ npm run dev           # Start Next.js dev server
 npm run build         # Production build
 npm run lint          # Run ESLint
 
-# Database (Prisma + PostgreSQL)
+# Database (Prisma + PostgreSQL via Supabase)
 npm run db:generate   # Generate Prisma client after schema changes
 npm run db:migrate    # Run pending migrations
 npm run db:push       # Push schema without migrations (dev only)
-npm run db:seed       # Seed initial data
+npm run db:seed       # Seed initial data from prisma/seed-data.json
 npm run db:studio     # Open Prisma Studio GUI
 npm run db:reset      # Reset DB and re-seed
 ```
 
-There are no automated tests configured in this project.
+No automated tests are configured.
 
 ## Architecture
 
-**EDESA VENTAS** is a Next.js 15 (App Router) e-commerce platform for construction/sanitaryware products in Ecuador, using TypeScript, Tailwind CSS v4, and shadcn/ui.
+**EDESA VENTAS** is a B2B e-commerce platform for construction/sanitaryware products in Ecuador. Built with Next.js 15 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui, and Prisma + PostgreSQL (Supabase).
 
 ### App Structure
 
-Two route groups with separate layouts:
-- `src/app/(main)/` — Public storefront (Header + Footer). Includes home, products, categories, cart, 4-step checkout, search, contact, about.
-- `src/app/admin/` — Protected dashboard. Requires auth via `src/app/admin/layout.tsx` which checks session before rendering. Includes product CRUD, categories, brands, purchase orders, and analytics dashboard.
+Two route groups:
+- `src/app/(main)/` — Public storefront. Server components fetch data directly from Prisma. Session + categories are fetched in the layout via `Promise.all()` and passed down as props.
+- `src/app/admin/` — Protected dashboard. Auth checked in `src/app/admin/layout.tsx`. Includes product CRUD, categories, brands, purchase orders, users, and order management.
 
-### Data Layer (Hybrid: JSON files + Prisma)
+### Data Layer
 
-**Current state:** The app runs entirely from JSON files — no database required.
+**Primary:** Prisma + PostgreSQL. All product/category/brand queries use `src/lib/prisma.ts` (singleton client) directly in Server Components and API routes.
 
-- `src/lib/data-store.ts` — All data reads/writes go through this file. It wraps `src/data/*.json` with typed getters/setters for products, categories, and brands.
-- `src/data/products.json`, `categories.json`, `brands.json` — The actual data store.
+**Secondary (orders only):** `src/lib/data-store.ts` handles orders via `src/data/orders.json`. Orders are not yet in the Prisma DB; they're stored in this JSON file.
 
-**Future state:** PostgreSQL via Prisma is fully configured but not yet active. `src/lib/prisma.ts` exports a singleton Prisma client. The schema (`prisma/schema.prisma`) covers Products, Categories, Brands, Customers, Orders, Carts, Suppliers, and PurchaseOrders.
+**Legacy:** `src/data/products.json`, `categories.json`, `brands.json` still exist but are no longer the source of truth. Ignore them.
 
-To migrate from JSON to Prisma: set `DATABASE_URL`, run `db:migrate`, `db:seed`, then swap `data-store` imports for Prisma client calls.
+### Authentication & B2B Model
 
-### Authentication
+JWT auth via `jose` (HTTP-only cookies, 7-day expiry). All logic in `src/lib/auth.ts`.
 
-JWT-based auth using the `jose` library with HTTP-only cookies. All logic is in `src/lib/auth.ts`:
-- `encrypt`/`decrypt` — JWT token handling (HS256, 7-day expiry)
-- `createSession` / `deleteSession` / `getSession` — Cookie management
-- `requireAuth(request)` — Middleware used in all `/api/admin/*` routes; returns 401 if unauthenticated
-- `verifyCredentials(email, password)` — Checks against users in `products.json` (or Prisma when active)
+Key functions:
+- `requireAdmin(request)` — used in all `/api/admin/*` routes; returns 401/403 if not admin
+- `requireAuth(request)` — returns auth status; used in non-admin protected routes
+- `verifyCredentials(email, password)` — checks Prisma `User` table + `bcrypt`; blocks if `isBlocked === true`
 
-Default admin: `admin@edesaventas.ec` / `Admin123!`
+**B2B pattern:**
+- `SessionPayload` includes `clientType: 'admin' | 'ferreteria' | 'minorista'` and `clienteAprobado: boolean`
+- `src/context/AuthContext.tsx` — client context; `AuthProvider` receives `session` from server layout, exposes `useAuth()` hook with `{ isAuthenticated, clientType, canSeePrices, clienteAprobado }`
+- Prices are hidden behind `src/components/products/PriceGate.tsx` — only shown to authenticated users
+- `AddToCartButton` shows a login CTA (with `?redirect=` param) for unauthenticated users
 
 ### API Routes
 
 All under `src/app/api/`:
-- `auth/login`, `auth/logout`, `auth/session` — Session management
-- `admin/products/route.ts` — GET (list) and POST (create), auth-required
-- `admin/products/[id]/route.ts` — GET, PUT, DELETE by ID, auth-required
-- `admin/upload/route.ts` — Multipart file upload; saves images to `public/images/products/` and PDFs to `public/documents/`
+- `auth/login`, `auth/logout`, `auth/session`, `auth/register` — session management
+- `admin/products/` + `admin/products/[id]/` — product CRUD (Prisma), admin-only
+- `admin/upload/` — multipart upload; images → `public/images/products/`, PDFs → `public/documents/`
+- `admin/usuarios/` + `admin/usuarios/[id]/` — user management, admin-only
+- `orders/` + `orders/[id]/` — order creation (POST, public) and management (PUT, admin-only); writes to `orders.json`
 
 ### State Management
 
-Cart state lives in `src/context/CartContext.tsx` (React Context + localStorage). Checkout flow state is in `src/context/CheckoutContext.tsx`. Both are provided at the `(main)` layout level.
+- `CartContext` (`src/context/CartContext.tsx`) — React Context + localStorage
+- `CheckoutContext` (`src/context/CheckoutContext.tsx`) — 4-step checkout flow + `paymentMethod`
+- Both provided at `(main)` layout level
 
 ### Key Conventions
 
-- **Path alias:** `@/*` maps to `src/*`
-- **Currency:** USD (Ecuador), formatted via `src/lib/format.ts` (`formatCurrency`, `formatPrice`)
-- **Language:** All UI text and error messages are in Spanish
-- **Forms:** React Hook Form + Zod validation (see `src/lib/validators.ts`)
-- **Components:** `src/components/ui/` — shadcn/ui primitives; `src/components/admin/` — admin-specific; `src/components/home/`, `products/`, `cart/`, `checkout/` — feature components
-- **Types:** Centralized in `src/types/` (`product.ts`, `cart.ts`, `order.ts`, `sales.ts`)
-- **Images:** Product images referenced by relative paths stored in JSON; the `public/` directory is the root
+- **Path alias:** `@/*` → `src/*`
+- **Currency:** USD; use `formatCurrency` / `formatPrice` from `src/lib/format.ts`
+- **Language:** All UI text and errors in Spanish
+- **Forms:** React Hook Form + Zod (validators in `src/lib/validators.ts`)
+- **Styling:** Tailwind v4 with `@theme inline` in globals.css. No `tailwind.config.js`. Primary color: `oklch(0.55 0.22 25)` (red). Font: Geist Sans.
+- **Types:** `src/types/product.ts`, `cart.ts`, `order.ts`, `sales.ts`
+- **Prisma → component type mismatch:** use `as any` when passing Prisma results to components expecting the local `Product` type
+- **Parallel queries:** always use `Promise.all()` for multiple independent DB fetches in the same page/layout
+- **Admin auth pattern:** `const r = await requireAdmin(req); if (!r.authorized) return r.response;`
+- **Images:** stored in `public/images/products/`; paths in DB are relative to `public/`

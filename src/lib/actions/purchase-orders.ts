@@ -18,7 +18,6 @@ const PurchaseOrderSchema = z.object({
 
 export async function createPurchaseOrder(data: z.infer<typeof PurchaseOrderSchema>) {
     try {
-        console.log('Creating Purchase Order with data:', JSON.stringify(data, null, 2));
         const validated = PurchaseOrderSchema.parse(data);
 
         // Calculate total
@@ -42,7 +41,6 @@ export async function createPurchaseOrder(data: z.infer<typeof PurchaseOrderSche
             },
         });
 
-        console.log('Purchase Order created:', purchaseOrder.id);
         revalidatePath('/admin/purchases');
         return { success: true, order: purchaseOrder };
     } catch (error) {

@@ -1,11 +1,12 @@
 import { Suspense } from 'react';
 import { ProductGrid } from '@/components/products/ProductGrid';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { ProductGridSkeleton } from '@/components/shared/LoadingSpinner';
 import { SortSelector } from '@/components/products/SortSelector';
+import { ProductFilters } from '@/components/products/ProductFilters';
 import prisma from '@/lib/prisma';
 
 export const metadata = {
-  title: 'Productos',
+  title: 'Catálogo de Productos',
   description: 'Explora nuestro catálogo completo de sanitarios, griferías, lavamanos y acabados de construcción',
 };
 
@@ -21,40 +22,98 @@ function getOrderBy(sort: string) {
 }
 
 interface ProductsPageProps {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    categoryId?: string;
+    brandId?: string;
+    minPrice?: string;
+    maxPrice?: string;
+  }>;
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { sort = 'newest' } = await searchParams;
+  const { sort = 'newest', categoryId, brandId, minPrice, maxPrice } = await searchParams;
 
-  const products = await prisma.product.findMany({
-    where: { isActive: true },
-    orderBy: getOrderBy(sort),
-    include: { images: true, category: true, brand: true },
-  });
+  const whereClause: Record<string, unknown> = { isActive: true };
+  if (categoryId) whereClause.categoryId = categoryId;
+  if (brandId) whereClause.brandId = brandId;
+  if (minPrice || maxPrice) {
+    const priceFilter: Record<string, number> = {};
+    if (minPrice) priceFilter.gte = parseFloat(minPrice);
+    if (maxPrice) priceFilter.lte = parseFloat(maxPrice);
+    whereClause.price = priceFilter;
+  }
+
+  const [products, categories, brands] = await Promise.all([
+    prisma.product.findMany({
+      where: whereClause,
+      orderBy: getOrderBy(sort),
+      include: { images: true, category: true, brand: true },
+    }),
+    prisma.category.findMany({
+      where: { parentId: null },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.brand.findMany({ orderBy: { name: 'asc' } }),
+  ]);
+
+  const hasFilters = categoryId || brandId || minPrice || maxPrice;
 
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight mb-2">
-              Todos los Productos
-            </h1>
-            <p className="text-muted-foreground">
-              {products.length} productos en el catálogo
-            </p>
-          </div>
-
-          <Suspense fallback={null}>
-            <SortSelector />
-          </Suspense>
+    <div className="bg-gray-50 min-h-screen">
+      {/* Page header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="container py-7">
+          <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
+            Catálogo de Productos
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            <span className="tabular-nums font-medium text-gray-700">{products.length}</span>{' '}
+            {products.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+            {hasFilters && (
+              <span className="ml-2 text-primary font-medium">· Filtros activos</span>
+            )}
+          </p>
         </div>
       </div>
 
-      <Suspense fallback={<LoadingSpinner />}>
-        <ProductGrid products={products as any} />
-      </Suspense>
+      <div className="container py-6">
+        <div className="flex gap-5">
+          {/* Desktop sidebar */}
+          <aside className="hidden lg:block w-56 flex-shrink-0">
+            <Suspense fallback={null}>
+              <ProductFilters categories={categories} brands={brands} />
+            </Suspense>
+          </aside>
+
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between mb-4 gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2.5">
+              <div className="lg:hidden">
+                <Suspense fallback={null}>
+                  <ProductFilters categories={categories} brands={brands} isMobile />
+                </Suspense>
+              </div>
+
+              <span className="text-sm text-gray-500 hidden lg:block tabular-nums">
+                {products.length} {products.length === 1 ? 'resultado' : 'resultados'}
+              </span>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-xs text-gray-400 hidden sm:inline">Ordenar por:</span>
+                <Suspense fallback={null}>
+                  <SortSelector />
+                </Suspense>
+              </div>
+            </div>
+
+            <Suspense fallback={<ProductGridSkeleton />}>
+              <ProductGrid products={products as any} />
+            </Suspense>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

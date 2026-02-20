@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { Product, Category, Brand } from '@/types';
 import { Order, SalesFilters } from '@/types/sales';
 import { calculateSalesMetrics } from '@/lib/sales-analytics';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, FolderTree, Tag, ShoppingCart, TrendingUp, DollarSign } from 'lucide-react';
+import { Package, FolderTree, Tag, ShoppingCart, TrendingUp, DollarSign, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SalesOverview } from '@/components/admin/SalesOverview';
@@ -27,7 +26,6 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
     endDate: new Date(),
   });
 
-  // Calcular métricas de ventas
   const salesMetrics = calculateSalesMetrics(orders, products, salesFilters);
 
   const activeProducts = products.filter((p) => p.isActive).length;
@@ -41,8 +39,8 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
       value: products.length,
       subtitle: `${activeProducts} activos`,
       icon: Package,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
       href: '/admin/productos',
     },
     {
@@ -50,8 +48,8 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
       value: categories.length,
       subtitle: 'Organizadas',
       icon: FolderTree,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      iconBg: 'bg-green-50',
+      iconColor: 'text-green-600',
       href: '/admin/categorias',
     },
     {
@@ -59,162 +57,154 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
       value: brands.length,
       subtitle: 'Registradas',
       icon: Tag,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      iconBg: 'bg-purple-50',
+      iconColor: 'text-purple-600',
       href: '/admin/marcas',
     },
     {
       title: 'Valor Inventario',
-      value: `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
       subtitle: 'Total en stock',
       icon: DollarSign,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
     },
     {
-      title: 'Productos Destacados',
+      title: 'Destacados',
       value: featuredProducts,
       subtitle: 'En home page',
       icon: TrendingUp,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      iconBg: 'bg-orange-50',
+      iconColor: 'text-orange-600',
     },
     {
       title: 'Stock Bajo',
       value: lowStockProducts,
       subtitle: 'Menos de 10 unidades',
       icon: ShoppingCart,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
+      iconBg: 'bg-red-50',
+      iconColor: 'text-red-600',
     },
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="mt-1 text-gray-500">
-            Resumen general de la tienda
-          </p>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Resumen general de la tienda</p>
         </div>
         <Link href="/admin/productos/nuevo">
-          <Button size="lg" className="gap-2">
-            <Package className="h-5 w-5" />
+          <Button size="sm" className="gap-2">
+            <Package className="h-4 w-4" />
             Nuevo Producto
           </Button>
         </Link>
       </div>
 
-      {/* Tabs para organizar el contenido */}
       <Tabs defaultValue="ventas" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="ventas">📊 Análisis de Ventas</TabsTrigger>
-          <TabsTrigger value="inventario">📦 Inventario</TabsTrigger>
+        <TabsList className="h-9 bg-gray-100 rounded-lg p-1 gap-1 w-auto inline-flex">
+          <TabsTrigger value="ventas" className="text-sm h-7 px-4 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            Análisis de Ventas
+          </TabsTrigger>
+          <TabsTrigger value="inventario" className="text-sm h-7 px-4 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            Inventario
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab de Ventas */}
-        <TabsContent value="ventas" className="space-y-6 mt-6">
-          {/* Resumen de ventas con filtros */}
+        <TabsContent value="ventas" className="space-y-5 mt-5">
           <SalesOverview
             metrics={salesMetrics}
             categories={categories}
             onFilterChange={setSalesFilters}
           />
-
-          {/* Tabla de productos más vendidos */}
           <TopProductsTable products={salesMetrics.topSellingProducts} />
-
-          {/* Desglose por categoría */}
           <CategorySalesBreakdown categories={salesMetrics.salesByCategory} />
         </TabsContent>
 
         {/* Tab de Inventario */}
-        <TabsContent value="inventario" className="space-y-6 mt-6">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <TabsContent value="inventario" className="space-y-5 mt-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {inventoryStats.map((stat) => {
               const Icon = stat.icon;
               return (
-                <Card key={stat.title} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">
+                <div
+                  key={stat.title}
+                  className="bg-white rounded-lg border border-gray-200 p-5 hover:border-gray-300 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                       {stat.title}
-                    </CardTitle>
-                    <div className={`rounded-full p-2 ${stat.bgColor}`}>
-                      <Icon className={`h-5 w-5 ${stat.color}`} />
+                    </p>
+                    <div className={`rounded-md p-2 ${stat.iconBg}`}>
+                      <Icon className={`h-4 w-4 ${stat.iconColor}`} />
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{stat.value}</div>
-                    <p className="mt-1 text-sm text-gray-500">{stat.subtitle}</p>
-                    {stat.href && (
-                      <Link href={stat.href}>
-                        <Button variant="link" size="sm" className="mt-2 px-0">
-                          Ver todos →
-                        </Button>
-                      </Link>
-                    )}
-                  </CardContent>
-                </Card>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 tabular-nums">{stat.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
+                  {stat.href && (
+                    <Link
+                      href={stat.href}
+                      className="mt-3 inline-flex text-xs text-primary font-medium hover:underline"
+                    >
+                      Ver todos
+                    </Link>
+                  )}
+                </div>
               );
             })}
           </div>
 
           {lowStockProducts > 0 && (
-            <Card className="border-orange-200 bg-orange-50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-800">
-                  <ShoppingCart className="h-5 w-5" />
-                  ⚠️ Productos con Stock Bajo
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-orange-700">
-                  Hay {lowStockProducts} producto(s) con menos de 10 unidades en stock.
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  {lowStockProducts} producto{lowStockProducts > 1 ? 's' : ''} con stock bajo
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Menos de 10 unidades disponibles. Considera reabastecer pronto.
                 </p>
                 <Link href="/admin/productos">
-                  <Button variant="outline" size="sm" className="mt-3 border-orange-300 text-orange-700 hover:bg-orange-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100"
+                  >
                     Ver Productos
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Acciones Rápidas - siempre visible */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Acciones Rápidas</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/admin/productos/nuevo">
-            <Button variant="outline" className="w-full gap-2">
-              <Package className="h-4 w-4" />
-              Nuevo Producto
-            </Button>
-          </Link>
-          <Link href="/admin/categorias">
-            <Button variant="outline" className="w-full gap-2">
-              <FolderTree className="h-4 w-4" />
-              Ver Categorías
-            </Button>
-          </Link>
-          <Link href="/admin/marcas">
-            <Button variant="outline" className="w-full gap-2">
-              <Tag className="h-4 w-4" />
-              Ver Marcas
-            </Button>
-          </Link>
-          <Link href="/" target="_blank">
-            <Button variant="outline" className="w-full gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Ver Tienda
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      {/* Acciones Rápidas */}
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { href: '/admin/productos/nuevo', icon: Package, label: 'Nuevo Producto' },
+            { href: '/admin/categorias', icon: FolderTree, label: 'Ver Categorías' },
+            { href: '/admin/marcas', icon: Tag, label: 'Ver Marcas' },
+            { href: '/', icon: TrendingUp, label: 'Ver Tienda', external: true },
+          ].map(({ href, icon: Icon, label, external }) => (
+            <Link key={label} href={href} target={external ? '_blank' : undefined}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2 h-9 text-sm font-medium justify-start"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Button>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

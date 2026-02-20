@@ -74,58 +74,62 @@ export default function CheckoutShippingPage() {
   }
 
   return (
-    <div className="container py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight mb-4">Checkout</h1>
-        <CheckoutSteps currentStep={2} />
+    <>
+      {/* Header bar */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="container py-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
+            Proceso de compra
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-4">
+            Checkout
+          </h1>
+          <CheckoutSteps currentStep={2} />
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {/* Shipping Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dirección de Envío</CardTitle>
-            <CardDescription>
-              ¿A dónde enviamos tu pedido?
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      <div className="container py-8 max-w-2xl">
+        <div className="space-y-6">
+          {/* Shipping Address */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Dirección de Envío</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                ¿A dónde enviamos tu pedido?
+              </p>
+            </div>
             <ShippingAddressForm
               defaultValues={shippingAddress || undefined}
               onSubmit={handleAddressSubmit}
               onBack={handleBack}
             />
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Shipping Method */}
-        {addressCompleted && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Método de Envío</CardTitle>
-              <CardDescription>
-                Selecciona cómo deseas recibir tu pedido
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Shipping Method */}
+          {addressCompleted && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in">
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Método de Envío</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Selecciona cómo deseas recibir tu pedido
+                </p>
+              </div>
               <ShippingMethodSelector
                 value={currentShippingMethod}
                 onChange={setCurrentShippingMethod}
               />
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* Order Notes */}
-        {addressCompleted && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Notas del Pedido (Opcional)</CardTitle>
-              <CardDescription>
-                Instrucciones especiales para la entrega
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Order Notes */}
+          {addressCompleted && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in">
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Notas del Pedido</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Instrucciones especiales para la entrega (opcional)
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Notas adicionales</Label>
                 <Textarea
@@ -136,24 +140,24 @@ export default function CheckoutShippingPage() {
                   onChange={(e) => setCurrentNotes(e.target.value)}
                   maxLength={500}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-400">
                   {currentNotes.length}/500 caracteres
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* Continue Button */}
-        {addressCompleted && (
-          <div className="flex justify-end">
-            <Button size="lg" onClick={handleContinue} className="gap-2">
-              Revisar Pedido
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </div>
-        )}
+          {/* Continue Button */}
+          {addressCompleted && (
+            <div className="flex justify-end animate-fade-in">
+              <Button size="lg" onClick={handleContinue} className="gap-2">
+                Revisar Pedido
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -10,15 +10,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// USUARIOS (ADMINISTRADORES / STAFF)
+// USUARIOS (ADMINISTRADORES, STAFF Y CLIENTES FERRETERÍA)
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("admin") // admin, staff
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  name       String?
+  role       String   @default("admin") // admin, staff, cliente
+  // B2B client fields
+  company    String?
+  ruc        String?
+  phone      String?
+  isApproved Boolean  @default(true)  // auto-aprobado; futura: validación manual
+  isBlocked  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
 }
 
 // CATEGORÍAS
@@ -63,6 +72,7 @@ model Product {
   description      String                 @db.Text
   shortDescription String?
   price            Float
+  wholesalePrice   Float?    // Precio mayorista para ferreterías B2B
   compareAtPrice   Float?
   costPrice        Float?
   stock            Int                    @default(0)
@@ -196,43 +206,48 @@ model Address {
 
 // ÓRDENES
 model Order {
-  id                String      @id @default(cuid())
-  orderNumber       String      @unique
-  customerId        String
-  customer          Customer    @relation(fields: [customerId], references: [id])
-  items             OrderItem[]
-  subtotal          Float
-  shippingCost      Float
-  tax               Float
-  total             Float
-  status            OrderStatus @default(PENDING)
-  // Snapshot of Shipping Address
-  shippingName       String
-  shippingAddress1   String
-  shippingAddress2   String?
-  shippingCity       String
-  shippingState      String
-  shippingPostalCode String
-  shippingCountry    String
-  shippingPhone      String
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  // FK opcional: guest checkout no requiere cuenta de cliente
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id])
+  items           OrderItem[]
 
-  // Snapshot of Billing Address
-  billingName        String?
-  billingAddress1    String?
-  billingAddress2    String?
-  billingCity        String?
-  billingState       String?
-  billingPostalCode  String?
-  billingCountry     String?
-  billingPhone       String?
-  shippingMethod    String
-  notes             String?     @db.Text
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  // Montos
+  subtotal        Float
+  tax             Float
+  shipping        Float       @default(0)
+  total           Float
+
+  // Estado y pago
+  status          OrderStatus @default(pendiente_pago)
+  paymentMethod   String?     // transferencia | tarjeta | efectivo
+
+  // Snapshot del cliente al momento de la compra
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerCompany String?
+  customerTaxId   String?
+
+  // Snapshot de dirección de envío
+  shippingStreet   String
+  shippingCity     String
+  shippingProvince String
+  shippingZipCode  String
+  shippingCountry  String      @default("Ecuador")
+
+  // Método de envío y notas
+  shippingMethod  String?
+  notes           String?     @db.Text
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([orderNumber])
   @@index([customerId])
   @@index([status])
+  @@index([createdAt])
 }
 
 // ITEMS DE ORDEN
@@ -245,7 +260,7 @@ model OrderItem {
   productName String
   productSku  String
   quantity    Int
-  price       Float
+  unitPrice   Float    // precio unitario al momento de la compra (snapshot)
   subtotal    Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -255,13 +270,14 @@ model OrderItem {
 }
 
 // ENUM DE ESTADOS DE ORDEN
+// Valores en español que coinciden con src/types/sales.ts OrderStatus
 enum OrderStatus {
-  PENDING
-  PROCESSING
-  CONFIRMED
-  SHIPPED
-  DELIVERED
-  CANCELLED
+  pendiente_pago
+  pagado
+  en_proceso
+  enviado
+  entregado
+  cancelado
 }
 
 // PROVEEDORES

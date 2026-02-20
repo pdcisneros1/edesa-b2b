@@ -60,7 +60,7 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, products }: { s
                 setItems(parsed.items || []);
                 // Also restore search queries if possible, or just let them remain empty (showing SKU/Name in inputs)
             } catch (e) {
-                console.error('Error parsing draft', e);
+                // Silently ignore malformed draft data
             }
         }
         setLoadedFromStorage(true);
@@ -190,8 +190,6 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, products }: { s
         setLoading(true);
 
         try {
-            console.log('Submitting order:', { invoiceNumber, supplierId, items });
-
             // Validation
             if (!invoiceNumber) { toast.error('Falta número de factura'); setLoading(false); return; }
             if (!supplierId) { toast.error('Falta proveedor'); setLoading(false); return; }
@@ -211,11 +209,11 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, products }: { s
                 router.push('/admin/purchases');
                 router.refresh();
             } else {
-                console.error('Submission error:', result.error);
+                console.error('[PurchaseOrder] Submission error:', result.error);
                 toast.error(result.error || 'Error al crear orden');
             }
         } catch (error) {
-            console.error('Unexpected error:', error);
+            console.error('[PurchaseOrder] Unexpected error:', error);
             toast.error('Error inesperado');
         } finally {
             setLoading(false);

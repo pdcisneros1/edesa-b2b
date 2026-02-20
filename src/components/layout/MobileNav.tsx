@@ -4,11 +4,18 @@ import Link from 'next/link';
 import { Home, Package, Grid, Info, Mail, ChevronRight } from 'lucide-react';
 import { SITE_NAME } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
-import { getMainCategories } from '@/data/mock-categories';
 
-export function MobileNav() {
-  const mainCategories = getMainCategories();
+interface NavCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
 
+interface MobileNavProps {
+  categories?: NavCategory[];
+}
+
+export function MobileNav({ categories = [] }: MobileNavProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -59,26 +66,28 @@ export function MobileNav() {
           </Link>
         </div>
 
-        <Separator className="my-4" />
-
-        {/* Categories */}
-        <div className="px-3">
-          <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Categorías Principales
-          </h3>
-          <div className="space-y-1">
-            {mainCategories.slice(0, 6).map((category) => (
-              <Link
-                key={category.id}
-                href={`/categorias/${category.slug}`}
-                className="flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <span>{category.name}</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Link>
-            ))}
-          </div>
-        </div>
+        {categories.length > 0 && (
+          <>
+            <Separator className="my-4" />
+            <div className="px-3">
+              <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Categorías Principales
+              </h3>
+              <div className="space-y-1">
+                {categories.slice(0, 6).map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/categorias/${category.slug}`}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <span>{category.name}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </nav>
     </div>
   );
