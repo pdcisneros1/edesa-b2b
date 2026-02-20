@@ -9,15 +9,26 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, categories] = await Promise.all([
-    getSession(),
-    prisma.category.findMany({
-      where: { parentId: null },
-      orderBy: { order: 'asc' },
-      select: { id: true, name: true, slug: true },
-      take: 9,
-    }),
-  ]);
+  let session = null;
+  let categories: Array<{ id: string; name: string; slug: string }> = [];
+
+  try {
+    const results = await Promise.all([
+      getSession(),
+      prisma.category.findMany({
+        where: { parentId: null },
+        orderBy: { order: 'asc' },
+        select: { id: true, name: true, slug: true },
+        take: 9,
+      }),
+    ]);
+    session = results[0];
+    categories = results[1];
+  } catch (error) {
+    console.error('Error loading layout data:', error);
+    // Si falla Prisma o getSession, continúa con valores por defecto
+    // El sitio seguirá funcionando sin categorías en el nav
+  }
 
   return (
     <AuthProvider session={session}>
