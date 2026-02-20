@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Forzar rendering dinámico en runtime (no pre-renderizar durante build)
+// Necesario porque los componentes usan Prisma
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
   return (
     <>
