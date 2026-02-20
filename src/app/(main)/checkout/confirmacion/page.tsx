@@ -43,6 +43,13 @@ export default function CheckoutConfirmationPage() {
     }
   }, [cart.items.length, customerInfo, shippingAddress, shippingMethod, orderCompleted, router]);
 
+  // Auto-seleccionar transferencia si no hay método seleccionado
+  useEffect(() => {
+    if (!paymentMethod && !orderCompleted) {
+      setPaymentMethod('transferencia');
+    }
+  }, [paymentMethod, orderCompleted, setPaymentMethod]);
+
   const handleBack = () => router.push('/checkout/envio');
 
   const handleConfirmOrder = async () => {
