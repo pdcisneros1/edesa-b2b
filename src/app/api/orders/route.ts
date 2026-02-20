@@ -259,10 +259,12 @@ export async function POST(request: NextRequest) {
       const total = Math.round((subtotal + shippingCost + tax) * 100) / 100;
 
       // Crear pedido con todos los items
+      // NOTA: customerId se deja como null porque session.userId es de la tabla User,
+      // no de Customer. Los datos del cliente se guardan en los campos snapshot.
       const created = await tx.order.create({
         data: {
           orderNumber,
-          customerId: session?.userId ?? null,
+          customerId: null,
           customerName,
           customerEmail: customerInfo.email,
           customerPhone: customerInfo.phone ?? null,
