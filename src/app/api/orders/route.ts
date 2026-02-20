@@ -116,6 +116,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+    console.log('📦 Pedido recibido:', {
+      hasCustomerInfo: !!body.customerInfo,
+      hasShippingAddress: !!body.shippingAddress,
+      hasShippingMethod: !!body.shippingMethod,
+      hasPaymentMethod: !!body.paymentMethod,
+      itemsCount: body.items?.length,
+    });
+
     const {
       customerInfo,
       shippingAddress,
@@ -155,6 +163,13 @@ export async function POST(request: NextRequest) {
 
     // Validar campos requeridos
     if (!customerInfo || !shippingAddress || !shippingMethod || !paymentMethod || !items?.length) {
+      console.error('❌ Validación fallida:', {
+        customerInfo: !!customerInfo,
+        shippingAddress: !!shippingAddress,
+        shippingMethod: !!shippingMethod,
+        paymentMethod: !!paymentMethod,
+        itemsLength: items?.length,
+      });
       return NextResponse.json({ error: 'Datos de pedido incompletos' }, { status: 400 });
     }
 
@@ -293,7 +308,13 @@ export async function POST(request: NextRequest) {
       message.includes('Stock insuficiente') ||
       message.includes('Producto no encontrado') ||
       message.includes('ya no está disponible');
-    console.error('Error al crear pedido:', err);
+
+    console.error('❌ ERROR AL CREAR PEDIDO:', {
+      message,
+      stack: err instanceof Error ? err.stack : undefined,
+      isUserError,
+    });
+
     return NextResponse.json(
       { error: isUserError ? message : 'Error al procesar el pedido. Intenta nuevamente.' },
       { status: isUserError ? 422 : 500 }
