@@ -191,8 +191,8 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
             { href: '/admin/pedidos', icon: ShoppingCart, label: 'Pedidos' },
             { href: '/admin/usuarios', icon: Users, label: 'Usuarios' },
             { href: '/admin/compras', icon: Truck, label: 'Compras' },
-          ].map(({ href, icon: Icon, label, external }) => (
-            <Link key={label} href={href} target={external ? '_blank' : undefined}>
+          ].map(({ href, icon: Icon, label }) => (
+            <Link key={label} href={href}>
               <Button
                 variant="outline"
                 size="sm"
