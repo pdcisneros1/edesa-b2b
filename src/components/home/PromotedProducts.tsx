@@ -5,8 +5,9 @@ import { Percent, Clock } from 'lucide-react';
 export async function PromotedProducts() {
   const now = new Date();
 
-  // Consultar productos con promociones activas
-  const promotedProducts = await prisma.product.findMany({
+  try {
+    // Consultar productos con promociones activas
+    const promotedProducts = await prisma.product.findMany({
     where: {
       isActive: true,
       promotions: {
@@ -87,12 +88,12 @@ export async function PromotedProducts() {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Si no hay productos en promoción, no renderizar la sección
-  if (promotedProducts.length === 0) {
-    return null;
-  }
+    // Si no hay productos en promoción, no renderizar la sección
+    if (promotedProducts.length === 0) {
+      return null;
+    }
 
-  return (
+    return (
     <section className="relative overflow-hidden bg-gradient-to-br from-red-600 via-red-700 to-red-800 py-16">
       {/* Patrón de fondo con puntos */}
       <div
@@ -132,5 +133,10 @@ export async function PromotedProducts() {
         </div>
       </div>
     </section>
-  );
+    );
+  } catch (error) {
+    // Si las tablas de promociones no existen aún, simplemente no mostrar la sección
+    console.error('Error al cargar promociones:', error);
+    return null;
+  }
 }
