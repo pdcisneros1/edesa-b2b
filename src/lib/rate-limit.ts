@@ -86,11 +86,11 @@ export function resetRateLimit(key: string): void {
 
 // ─── Configuraciones predefinidas ────────────────────────────────────────────
 
-/** Login: 5 intentos por ventana de 15 minutos, bloqueo de 15 minutos */
+/** Login: 10 intentos por ventana de 15 minutos, bloqueo de 1 minuto (temporal para desbloqueo) */
 export const LOGIN_RATE_LIMIT: RateLimitConfig = {
-  maxRequests: 5,
+  maxRequests: 10,
   windowMs: 15 * 60 * 1000,
-  blockDurationMs: 15 * 60 * 1000,
+  blockDurationMs: 1 * 60 * 1000, // Reducido temporalmente de 15min a 1min
 };
 
 /** Registro: 3 intentos por IP por ventana de 1 hora */
