@@ -17,3 +17,20 @@ export function calculateDiscount(price: number, compareAtPrice: number): number
   if (!compareAtPrice || compareAtPrice <= price) return 0;
   return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
 }
+
+/**
+ * Formatea un porcentaje de descuento para visualización
+ */
+export function formatDiscountPercentage(percentage: number): string {
+  return `-${Math.round(percentage)}%`;
+}
+
+/**
+ * Calcula el monto de descuento aplicado
+ */
+export function calculateDiscountAmount(
+  originalPrice: number,
+  finalPrice: number
+): number {
+  return Math.max(0, originalPrice - finalPrice);
+}

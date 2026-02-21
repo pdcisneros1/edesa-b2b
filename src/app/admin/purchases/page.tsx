@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/format';
 import { formatDate } from '@/lib/utils';
 import prisma from '@/lib/prisma';
+import { PurchasesHeader } from '@/components/admin/purchases/PurchasesHeader';
 
 export default async function PurchaseOrdersPage() {
     const orders = await prisma.purchaseOrder.findMany({
@@ -14,15 +15,7 @@ export default async function PurchaseOrdersPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Compras a Fábrica</h1>
-                <Link href="/admin/purchases/new">
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nueva Compra
-                    </Button>
-                </Link>
-            </div>
+            <PurchasesHeader orders={orders as any} />
 
             <div className="rounded-md border">
                 <table className="w-full text-sm">

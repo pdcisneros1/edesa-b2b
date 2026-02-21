@@ -10,15 +10,24 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { PriceGate } from './PriceGate';
 import { calculateDiscount } from '@/lib/format';
+import {
+  getActivePromotionForProduct,
+  calculateDiscountPercentage,
+  type PromotionProduct,
+} from '@/types/promotion';
 
 interface ProductCardProps {
-  product: Product;
+  product: Product & { promotions?: PromotionProduct[] };
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const { canSeePrices } = useAuth();
   const mainImage = product.images[0]?.url || '/images/products/placeholder.jpg';
+
+  // Verificar si tiene promoción activa
+  const activePromotion = product.promotions ? getActivePromotionForProduct(product) : null;
+
   const hasDiscount =
     !product.wholesalePrice &&
     product.compareAtPrice &&
@@ -27,6 +36,15 @@ export function ProductCard({ product }: ProductCardProps) {
     hasDiscount && product.compareAtPrice
       ? calculateDiscount(product.price, product.compareAtPrice)
       : 0;
+
+  // Calcular descuento de promoción si existe
+  const promotionDiscountPercentage = activePromotion?.promotion
+    ? calculateDiscountPercentage(
+        product.wholesalePrice || product.price,
+        activePromotion.promotion.discountType,
+        activePromotion.promotion.discountValue
+      )
+    : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,12 +66,17 @@ export function ProductCard({ product }: ProductCardProps) {
                 Nuevo
               </span>
             )}
-            {hasDiscount && discount > 0 && (
+            {activePromotion && promotionDiscountPercentage > 0 && (
+              <span className="inline-flex items-center rounded-md bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm animate-pulse">
+                PROMOCIÓN -{Math.round(promotionDiscountPercentage)}%
+              </span>
+            )}
+            {!activePromotion && hasDiscount && discount > 0 && (
               <span className="inline-flex items-center rounded-md bg-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
                 -{discount}%
               </span>
             )}
-            {product.wholesalePrice && product.wholesalePrice > 0 && (
+            {product.wholesalePrice && product.wholesalePrice > 0 && !activePromotion && (
               <span className="inline-flex items-center rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
                 Mayorista
               </span>
@@ -110,6 +133,7 @@ export function ProductCard({ product }: ProductCardProps) {
             price={product.price}
             wholesalePrice={product.wholesalePrice}
             compareAtPrice={product.compareAtPrice}
+            promotion={activePromotion?.promotion}
             compact
           />
           {canSeePrices && (

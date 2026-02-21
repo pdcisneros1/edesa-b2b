@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Hero } from '@/components/home/Hero';
 import { Features } from '@/components/home/Features';
 import { FeaturedProducts } from '@/components/home/FeaturedProducts';
+import { PromotedProducts } from '@/components/home/PromotedProducts';
 import { CategoryGrid } from '@/components/home/CategoryGrid';
 import { BrandShowcase } from '@/components/home/BrandShowcase';
 import { SITE_NAME } from '@/lib/constants';
@@ -29,6 +30,7 @@ export default function HomePage() {
     <>
       <Hero />
       <Features />
+      <PromotedProducts />
       <FeaturedProducts />
       <CategoryGrid />
       <BrandShowcase />

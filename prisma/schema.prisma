@@ -89,6 +89,7 @@ model Product {
   isFeatured       Boolean                @default(false)
   isNew            Boolean                @default(false)
   purchaseItems    PurchaseOrderItem[]
+  promotions       PromotionProduct[]
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 
@@ -330,4 +331,52 @@ enum PurchaseOrderStatus {
   PENDING
   RECEIVED
   CANCELLED
+}
+
+// PROMOCIONES
+model Promotion {
+  id                  String             @id @default(cuid())
+  name                String             // Nombre de la promoción
+  description         String?            @db.Text
+
+  // Descuento
+  discountType        DiscountType       // 'percentage' o 'fixed'
+  discountValue       Float              // Porcentaje (0-100) o monto fijo en USD
+
+  // Validez - ambas opciones disponibles
+  validFrom           DateTime?          // Fecha inicio (opcional)
+  validUntil          DateTime?          // Fecha fin (opcional)
+  daysFromActivation  Int?               // Días desde activación (opcional)
+
+  // Control
+  isActive            Boolean            @default(true)
+  isManuallyDisabled  Boolean            @default(false)  // Desactivación manual
+
+  // Relación M:N con productos
+  products            PromotionProduct[]
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([isActive])
+  @@index([validFrom, validUntil])
+}
+
+model PromotionProduct {
+  id           String    @id @default(cuid())
+  promotionId  String
+  productId    String
+  activatedAt  DateTime  @default(now())  // Para calcular días desde activación
+
+  promotion    Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, productId])
+  @@index([productId])
+  @@index([promotionId])
+}
+
+enum DiscountType {
+  percentage
+  fixed
 }

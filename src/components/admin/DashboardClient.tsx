@@ -11,6 +11,7 @@ import { SalesOverview } from '@/components/admin/SalesOverview';
 import { TopProductsTable } from '@/components/admin/TopProductsTable';
 import { CategorySalesBreakdown } from '@/components/admin/CategorySalesBreakdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ExportButton } from '@/components/admin/ExportButton';
 
 interface DashboardClientProps {
   products: Product[];
@@ -87,6 +88,56 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
     },
   ];
 
+  // Preparar datos para exportación del dashboard
+  const dashboardExportData = [
+    {
+      metrica: 'Total Productos',
+      valor: products.length,
+      detalle: `${activeProducts} activos`,
+    },
+    {
+      metrica: 'Categorías',
+      valor: categories.length,
+      detalle: 'Organizadas',
+    },
+    {
+      metrica: 'Marcas',
+      valor: brands.length,
+      detalle: 'Registradas',
+    },
+    {
+      metrica: 'Valor Inventario',
+      valor: totalValue,
+      detalle: 'Total en stock',
+    },
+    {
+      metrica: 'Productos Destacados',
+      valor: featuredProducts,
+      detalle: 'En home page',
+    },
+    {
+      metrica: 'Stock Bajo',
+      valor: lowStockProducts,
+      detalle: 'Menos de 10 unidades',
+    },
+    {
+      metrica: 'Total Ventas',
+      valor: salesMetrics.totalRevenue,
+      detalle: `${salesMetrics.totalOrders} pedidos`,
+    },
+    {
+      metrica: 'Ticket Promedio',
+      valor: salesMetrics.averageOrderValue,
+      detalle: 'Por pedido',
+    },
+  ];
+
+  const dashboardExportColumns = [
+    { header: 'Métrica', dataKey: 'metrica' },
+    { header: 'Valor', dataKey: 'valor' },
+    { header: 'Detalle', dataKey: 'detalle' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -95,12 +146,20 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-0.5">Resumen general de la tienda</p>
         </div>
-        <Link href="/admin/productos/nuevo">
-          <Button size="sm" className="gap-2">
-            <Package className="h-4 w-4" />
-            Nuevo Producto
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <ExportButton
+            data={dashboardExportData}
+            filename="dashboard-metricas"
+            columns={dashboardExportColumns}
+            title="Métricas del Dashboard"
+          />
+          <Link href="/admin/productos/nuevo">
+            <Button size="sm" className="gap-2">
+              <Package className="h-4 w-4" />
+              Nuevo Producto
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Tabs defaultValue="ventas" className="w-full">

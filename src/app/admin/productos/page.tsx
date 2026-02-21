@@ -1,4 +1,5 @@
 import { ProductsTable } from '@/components/admin/ProductsTable';
+import { ProductosHeader } from '@/components/admin/productos/ProductosHeader';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Package, Plus } from 'lucide-react';
@@ -13,20 +14,7 @@ export default async function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Productos</h1>
-          <p className="mt-1 text-gray-500">
-            Gestiona el catálogo de productos ({products.length} total)
-          </p>
-        </div>
-        <Link href="/admin/productos/nuevo">
-          <Button size="lg" className="gap-2">
-            <Plus className="h-5 w-5" />
-            Nuevo Producto
-          </Button>
-        </Link>
-      </div>
+      <ProductosHeader products={products as any} />
 
       {products.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 py-12">

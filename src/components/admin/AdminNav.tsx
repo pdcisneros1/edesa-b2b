@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   Users,
   ChevronRight,
+  Percent,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingBag },
   { name: 'Usuarios', href: '/admin/usuarios', icon: Users },
   { name: 'Productos', href: '/admin/productos', icon: Package },
+  { name: 'Promociones', href: '/admin/promociones', icon: Percent },
   { name: 'Categorías', href: '/admin/categorias', icon: FolderTree },
   { name: 'Marcas', href: '/admin/marcas', icon: Tag },
   { name: 'Compras', href: '/admin/purchases', icon: FileText },

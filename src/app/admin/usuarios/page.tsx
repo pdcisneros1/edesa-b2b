@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { Users, ArrowRight } from 'lucide-react';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
+import { UsuariosHeader } from '@/components/admin/usuarios/UsuariosHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,15 +48,7 @@ export default async function AdminUsuariosPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Usuarios</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {clientes.length} {clientes.length === 1 ? 'ferretería' : 'ferreterías'} · {admins.length} {admins.length === 1 ? 'administrador' : 'administradores'}
-          </p>
-        </div>
-        <CreateUserDialog />
-      </div>
+      <UsuariosHeader users={users} />
 
       {users.length === 0 && (
         <div className="bg-white rounded-xl border border-gray-200 flex flex-col items-center justify-center py-20 text-center">

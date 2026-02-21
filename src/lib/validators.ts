@@ -232,6 +232,46 @@ export const adminCreateUserSchema = z.object({
   phone: z.string().trim().max(15).optional(),
 });
 
+// ─── Promotion Schema (para admin) ────────────────────────────────────────────
+
+export const promotionSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(3, 'El nombre debe tener al menos 3 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres'),
+  description: z
+    .string()
+    .trim()
+    .max(500, 'La descripción no puede exceder 500 caracteres')
+    .optional()
+    .or(z.literal('')),
+  discountType: z.enum(['percentage', 'fixed'], {
+    message: 'Selecciona un tipo de descuento',
+  }),
+  discountValue: z
+    .number()
+    .min(0, 'El valor debe ser mayor o igual a 0'),
+  validFrom: z.date().nullable().optional(),
+  validUntil: z.date().nullable().optional(),
+  daysFromActivation: z
+    .number()
+    .int('Debe ser un número entero')
+    .positive('Debe ser mayor a 0')
+    .nullable()
+    .optional(),
+  productIds: z
+    .array(z.string())
+    .min(1, 'Selecciona al menos un producto'),
+  isActive: z.boolean().optional(),
+}).refine(
+  (data) => data.validFrom || data.validUntil || data.daysFromActivation,
+  {
+    message: 'Debe especificar al menos una condición de validez (fechas o días desde activación)',
+    path: ['validFrom'],
+  }
+);
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -242,3 +282,4 @@ export type CompleteCheckoutFormData = z.infer<typeof completeCheckoutSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type ProductFormData = z.infer<typeof productSchema>;
 export type AdminCreateUserFormData = z.infer<typeof adminCreateUserSchema>;
+export type PromotionFormData = z.infer<typeof promotionSchema>;

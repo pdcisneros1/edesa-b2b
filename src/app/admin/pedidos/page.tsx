@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types/sales';
 import { formatPrice } from '@/lib/format';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
+import { PedidosHeader } from '@/components/admin/pedidos/PedidosHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,14 +45,7 @@ export default async function AdminPedidosPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Pedidos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {orders.length} {orders.length === 1 ? 'pedido registrado' : 'pedidos registrados'}
-          </p>
-        </div>
-      </div>
+      <PedidosHeader orders={orders} />
 
       {/* Empty state */}
       {orders.length === 0 && (

@@ -5,11 +5,14 @@ import { Lock, Store } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, calculateDiscount } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
+import { Promotion, calculatePromotionPrice } from '@/types/promotion';
 
 interface PriceGateProps {
   price: number;
   wholesalePrice?: number | null;
   compareAtPrice?: number | null;
+  /** Promoción activa (opcional) */
+  promotion?: Promotion;
   /** Variante compacta para tarjetas de producto */
   compact?: boolean;
   /** Ruta de retorno después del login */
@@ -20,6 +23,7 @@ export function PriceGate({
   price,
   wholesalePrice,
   compareAtPrice,
+  promotion,
   compact = false,
   redirectAfterLogin,
 }: PriceGateProps) {
@@ -70,33 +74,65 @@ export function PriceGate({
   }
 
   // Usuario autenticado: mostrar precio correspondiente
-  // Prioridad: precio mayorista > precio regular
-  const effectivePrice = (wholesalePrice && wholesalePrice > 0) ? wholesalePrice : price;
+  // Prioridad: promoción > precio mayorista > precio regular
+  const basePrice = (wholesalePrice && wholesalePrice > 0) ? wholesalePrice : price;
   const isWholesale = !!(wholesalePrice && wholesalePrice > 0 && wholesalePrice !== price);
-  const hasCompare = !isWholesale && compareAtPrice && compareAtPrice > price;
+
+  // Aplicar promoción si existe
+  let effectivePrice = basePrice;
+  const originalPrice = basePrice;
+  let hasPromotion = false;
+
+  if (promotion) {
+    effectivePrice = calculatePromotionPrice(
+      basePrice,
+      promotion.discountType,
+      promotion.discountValue
+    );
+    hasPromotion = effectivePrice < basePrice;
+  }
+
+  const hasCompare = !isWholesale && !hasPromotion && compareAtPrice && compareAtPrice > price;
   const discount = hasCompare ? calculateDiscount(price, compareAtPrice!) : 0;
 
   if (compact) {
     return (
       <div>
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-lg font-extrabold text-gray-900">
+          <span
+            className={`text-lg font-extrabold ${
+              hasPromotion ? 'text-red-600' : 'text-gray-900'
+            }`}
+          >
             {formatPrice(effectivePrice)}
           </span>
-          {isWholesale && (
+          {hasPromotion && (
+            <span className="text-sm text-gray-400 line-through">
+              {formatPrice(originalPrice)}
+            </span>
+          )}
+          {!hasPromotion && isWholesale && (
             <span className="text-sm text-gray-400 line-through">{formatPrice(price)}</span>
           )}
-          {hasCompare && (
-            <span className="text-sm text-gray-400 line-through">{formatPrice(compareAtPrice!)}</span>
+          {!hasPromotion && hasCompare && (
+            <span className="text-sm text-gray-400 line-through">
+              {formatPrice(compareAtPrice!)}
+            </span>
           )}
         </div>
-        {isWholesale && (
+        {hasPromotion && (
+          <p className="text-[11px] font-bold text-red-600 flex items-center gap-1 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-600 inline-block animate-pulse" />
+            Precio promocional
+          </p>
+        )}
+        {!hasPromotion && isWholesale && (
           <p className="text-[11px] font-bold text-primary flex items-center gap-1 mt-0.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
             Precio mayorista
           </p>
         )}
-        {hasCompare && discount > 0 && (
+        {!hasPromotion && hasCompare && discount > 0 && (
           <p className="text-[11px] font-bold text-emerald-600 mt-0.5">
             Ahorra {discount}%
           </p>
@@ -108,22 +144,44 @@ export function PriceGate({
   return (
     <div className="space-y-1">
       <div className="flex items-baseline gap-3 flex-wrap">
-        <span className="text-3xl font-extrabold text-gray-900">
+        <span
+          className={`text-3xl font-extrabold ${
+            hasPromotion ? 'text-red-600' : 'text-gray-900'
+          }`}
+        >
           {formatPrice(effectivePrice)}
         </span>
-        {isWholesale && (
+        {hasPromotion && (
+          <>
+            <span className="text-base text-gray-400 line-through">
+              {formatPrice(originalPrice)}
+            </span>
+            <Badge variant="destructive" className="text-xs animate-pulse">
+              PROMOCIÓN
+            </Badge>
+          </>
+        )}
+        {!hasPromotion && isWholesale && (
           <span className="text-base text-gray-400 line-through">{formatPrice(price)}</span>
         )}
-        {hasCompare && (
+        {!hasPromotion && hasCompare && (
           <>
-            <span className="text-base text-gray-400 line-through">{formatPrice(compareAtPrice!)}</span>
+            <span className="text-base text-gray-400 line-through">
+              {formatPrice(compareAtPrice!)}
+            </span>
             {discount > 0 && (
               <Badge variant="destructive" className="text-xs">-{discount}%</Badge>
             )}
           </>
         )}
       </div>
-      {isWholesale && (
+      {hasPromotion && (
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-2.5 py-1">
+          <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+          <span className="text-xs font-bold text-red-700">Precio promocional</span>
+        </div>
+      )}
+      {!hasPromotion && isWholesale && (
         <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1">
           <Store className="h-3 w-3 text-primary" />
           <span className="text-xs font-bold text-primary">Precio mayorista ferretería</span>
