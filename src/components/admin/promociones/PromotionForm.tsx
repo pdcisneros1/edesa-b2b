@@ -42,7 +42,7 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
           discountValue: promotion.discountValue,
           validFrom: promotion.validFrom ? new Date(promotion.validFrom).toISOString().slice(0, 16) : '',
           validUntil: promotion.validUntil ? new Date(promotion.validUntil).toISOString().slice(0, 16) : '',
-          daysFromActivation: promotion.daysFromActivation || undefined,
+          daysFromActivation: promotion.daysFromActivation || null,
           productIds: promotion.products.map((p) => p.productId),
           isActive: promotion.isActive,
         }
@@ -53,7 +53,7 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
           discountValue: 0,
           validFrom: '',
           validUntil: '',
-          daysFromActivation: undefined,
+          daysFromActivation: null,
           productIds: [],
           isActive: true,
         },
@@ -322,7 +322,13 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
                 id="daysFromActivation"
                 type="number"
                 step="1"
-                {...register('daysFromActivation', { valueAsNumber: true })}
+                {...register('daysFromActivation', {
+                  setValueAs: (v) => {
+                    if (v === '' || v === null || v === undefined) return null;
+                    const parsed = parseInt(v, 10);
+                    return isNaN(parsed) ? null : parsed;
+                  }
+                })}
                 placeholder="Ej: 30"
               />
               <p className="text-xs text-muted-foreground">

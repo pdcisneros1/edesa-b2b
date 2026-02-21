@@ -255,16 +255,24 @@ export const promotionSchema = z.object({
   validFrom: z.string().optional(),
   validUntil: z.string().optional(),
   daysFromActivation: z
-    .number()
+    .number({
+      invalid_type_error: 'Debe ser un número válido',
+    })
     .int('Debe ser un número entero')
     .positive('Debe ser mayor a 0')
-    .optional(),
+    .optional()
+    .nullable(),
   productIds: z
     .array(z.string())
     .min(1, 'Selecciona al menos un producto'),
   isActive: z.boolean().optional(),
 }).refine(
-  (data) => data.validFrom || data.validUntil || data.daysFromActivation,
+  (data) => {
+    const hasValidFrom = data.validFrom && data.validFrom.length > 0;
+    const hasValidUntil = data.validUntil && data.validUntil.length > 0;
+    const hasDaysFromActivation = data.daysFromActivation !== null && data.daysFromActivation !== undefined && data.daysFromActivation > 0;
+    return hasValidFrom || hasValidUntil || hasDaysFromActivation;
+  },
   {
     message: 'Debe especificar al menos una condición de validez (fechas o días desde activación)',
     path: ['validFrom'],
