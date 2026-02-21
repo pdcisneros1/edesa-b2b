@@ -51,21 +51,46 @@ export default function NuevaPromocionPage() {
     if (productsLoaded) return; // Ya cargados
 
     setIsLoadingProducts(true);
+
     try {
+      console.log('Iniciando carga de productos...');
+
       const res = await fetch('/api/admin/products', {
         credentials: 'include',
       });
-      if (res.ok) {
-        const data = await res.json();
-        setProducts(data);
-        setProductsLoaded(true);
-      } else {
-        console.error('Error loading products:', res.status);
-        toast.error('Error al cargar productos');
+
+      console.log('Respuesta del servidor:', res.status);
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${res.statusText}`);
       }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Error al cargar productos');
+
+      const data = await res.json();
+      console.log('Productos recibidos:', data?.length || 0);
+
+      // Validar que data es un array
+      if (!Array.isArray(data)) {
+        throw new Error('La respuesta no es un array de productos');
+      }
+
+      // Validar estructura de cada producto
+      const validProducts = data.filter((p: any) => {
+        return p && typeof p === 'object' && p.id && p.name && p.sku;
+      });
+
+      console.log('Productos válidos:', validProducts.length);
+
+      if (validProducts.length === 0) {
+        toast.error('No hay productos disponibles');
+      } else {
+        setProducts(validProducts);
+        setProductsLoaded(true);
+        toast.success(`${validProducts.length} productos cargados`);
+      }
+
+    } catch (error: any) {
+      console.error('Error completo:', error);
+      toast.error(`Error: ${error.message || 'No se pudieron cargar los productos'}`);
     } finally {
       setIsLoadingProducts(false);
     }
