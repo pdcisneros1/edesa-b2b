@@ -34,10 +34,14 @@ export function PromotionProductSelector({
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/admin/products');
+        const res = await fetch('/api/admin/products', {
+          credentials: 'include',
+        });
         if (res.ok) {
           const data = await res.json();
           setProducts(data);
+        } else {
+          console.error('Error loading products:', res.status);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
