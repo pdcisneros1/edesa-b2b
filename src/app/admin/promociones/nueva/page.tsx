@@ -42,33 +42,34 @@ export default function NuevaPromocionPage() {
 
   // Product selector state
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch products
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/admin/products', {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setProducts(data);
-        } else {
-          console.error('Error loading products:', res.status);
-          toast.error('Error al cargar productos');
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        toast.error('Error al cargar productos');
-      } finally {
-        setIsLoadingProducts(false);
-      }
-    };
+  // Fetch products (manual - solo cuando se hace click)
+  const loadProducts = async () => {
+    if (productsLoaded) return; // Ya cargados
 
-    fetchProducts();
-  }, []);
+    setIsLoadingProducts(true);
+    try {
+      const res = await fetch('/api/admin/products', {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data);
+        setProductsLoaded(true);
+      } else {
+        console.error('Error loading products:', res.status);
+        toast.error('Error al cargar productos');
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Error al cargar productos');
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
 
   // Filter products
   const filteredProducts = products.filter((product) => {
@@ -355,6 +356,24 @@ export default function NuevaPromocionPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Botón para cargar productos */}
+          {!productsLoaded && !isLoadingProducts && (
+            <div className="text-center py-8">
+              <Button
+                type="button"
+                onClick={loadProducts}
+                variant="outline"
+                className="w-full"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Cargar Lista de Productos
+              </Button>
+              <p className="text-sm text-muted-foreground mt-2">
+                Click para ver todos los productos disponibles
+              </p>
+            </div>
+          )}
+
           {/* Preview de productos seleccionados */}
           {selectedProducts.length > 0 && (
             <div className="rounded-lg border border-green-200 bg-green-50 p-4">
@@ -386,38 +405,43 @@ export default function NuevaPromocionPage() {
             </div>
           )}
 
-          {/* Buscador */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Buscar por nombre o SKU..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          {/* Buscador - solo si hay productos cargados */}
+          {productsLoaded && (
+            <>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Buscar por nombre o SKU..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
 
-          {/* Acciones */}
-          <div className="flex justify-between items-center">
-            <Label className="text-sm font-medium">
-              {filteredProducts.length} producto(s) encontrado(s)
-            </Label>
-            <button
-              type="button"
-              onClick={handleSelectAll}
-              className="text-xs text-primary hover:underline"
-            >
-              Seleccionar todos (activos)
-            </button>
-          </div>
+              {/* Acciones */}
+              <div className="flex justify-between items-center">
+                <Label className="text-sm font-medium">
+                  {filteredProducts.length} producto(s) encontrado(s)
+                </Label>
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Seleccionar todos (activos)
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Lista de productos */}
           {isLoadingProducts ? (
             <div className="text-center py-12 text-muted-foreground">
-              Cargando productos...
+              <Package className="h-8 w-8 mx-auto mb-2 animate-pulse opacity-50" />
+              <p>Cargando productos...</p>
             </div>
-          ) : (
+          ) : productsLoaded ? (
             <div className="border rounded-lg max-h-96 overflow-y-auto">
               {filteredProducts.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
@@ -474,9 +498,9 @@ export default function NuevaPromocionPage() {
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
-          {selectedProducts.length === 0 && !isLoadingProducts && (
+          {selectedProducts.length === 0 && !isLoadingProducts && productsLoaded && (
             <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
               <Package className="h-4 w-4 flex-shrink-0" />
               <p>Debes seleccionar al menos un producto para la promoción</p>
