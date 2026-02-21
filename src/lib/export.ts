@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 /**
  * Exporta datos a un archivo Excel (.xlsx)
@@ -57,7 +57,7 @@ export function exportToPDF(
   );
 
   // Agregar tabla
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [headers],
     body: rows,
     startY: 35,
