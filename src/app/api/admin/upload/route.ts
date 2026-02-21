@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
+import { uploadToStorage } from '@/lib/supabase-storage';
 import path from 'path';
 
 // ─── Configuración de tipos permitidos ───────────────────────────────────────
@@ -151,36 +151,24 @@ export async function POST(request: NextRequest) {
     // Generar nombre único con timestamp (previene colisiones)
     const timestamp = Date.now();
     const isPDF = file.type === 'application/pdf';
+    const sanitizedName = sanitizeFilename(file.name);
     const filename = isPDF
-      ? `ficha_${timestamp}${originalExt}`
-      : `product_${timestamp}${originalExt}`;
+      ? `ficha_${timestamp}_${sanitizedName}`
+      : `product_${timestamp}_${sanitizedName}`;
 
-    // Determinar directorio destino
-    const subDir = isPDF ? 'documents' : path.join('images', 'products');
-    const publicDir = path.resolve(process.cwd(), 'public', subDir);
-    const filepath = path.resolve(publicDir, filename);
+    // Determinar bucket de Supabase Storage
+    const bucket = isPDF ? 'documents' : 'products';
 
-    console.log('[Upload] Guardando en:', filepath);
+    console.log('[Upload] Subiendo a Supabase Storage:', { bucket, filename });
 
-    // CRÍTICO: Verificar que el filepath final está dentro del directorio esperado (path traversal)
-    if (!filepath.startsWith(publicDir)) {
-      console.error('[Upload] Path traversal detectado:', filepath);
-      return NextResponse.json(
-        { error: 'Ruta de archivo inválida' },
-        { status: 400 }
-      );
-    }
+    // Subir a Supabase Storage
+    const publicUrl = await uploadToStorage(bucket, buffer, filename, file.type);
 
-    // Asegurar que el directorio existe
-    await mkdir(publicDir, { recursive: true });
+    console.log('[Upload] Archivo subido exitosamente. URL:', publicUrl);
 
-    await writeFile(filepath, buffer);
-
-    const url = `/${subDir.replace(/\\/g, '/')}/${filename}`;
-
-    console.log('[Upload] Archivo guardado exitosamente. URL:', url);
-
-    return NextResponse.json({ url }, { status: 201 });
+    // Retornar URL en el formato esperado por el frontend (compatible con rutas locales)
+    // El frontend espera /images/products/... pero en Supabase tenemos la URL completa
+    return NextResponse.json({ url: publicUrl }, { status: 201 });
   } catch (error) {
     console.error('[Upload] Error al subir archivo:', error);
     return NextResponse.json(
