@@ -81,17 +81,20 @@ export default function NuevaPromocionPage() {
   });
 
   const handleToggleProduct = (productId: string) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
+    // Asegurar que productId es string
+    const id = String(productId);
+
+    if (selectedProducts.includes(id)) {
+      setSelectedProducts(selectedProducts.filter((existingId) => existingId !== id));
     } else {
-      setSelectedProducts([...selectedProducts, productId]);
+      setSelectedProducts([...selectedProducts, id]);
     }
   };
 
   const handleSelectAll = () => {
     const activeProductIds = filteredProducts
       .filter((p) => p.isActive)
-      .map((p) => p.id);
+      .map((p) => String(p.id)); // Asegurar que son strings
     setSelectedProducts(activeProductIds);
   };
 
@@ -123,29 +126,45 @@ export default function NuevaPromocionPage() {
       return;
     }
 
+    // Validar que todos los productIds sean strings válidos
+    const validProductIds = selectedProducts
+      .map((id) => String(id).trim())
+      .filter((id) => id.length > 0);
+
+    if (validProductIds.length === 0) {
+      toast.error('Los IDs de productos no son válidos');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      const payload = {
+        name: name.trim(),
+        description: description.trim() || null,
+        discountType,
+        discountValue: parseFloat(discountValue),
+        validFrom: validFrom && validFrom.trim() !== '' ? new Date(validFrom).toISOString() : null,
+        validUntil: validUntil && validUntil.trim() !== '' ? new Date(validUntil).toISOString() : null,
+        daysFromActivation: daysFromActivation && daysFromActivation.trim() !== '' ? parseInt(daysFromActivation, 10) : null,
+        productIds: validProductIds, // Array de strings validados
+        isActive,
+      };
+
+      console.log('Enviando promoción:', payload); // Debug
+
       const res = await fetch('/api/admin/promociones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description: description || null,
-          discountType,
-          discountValue: parseFloat(discountValue),
-          validFrom: validFrom ? new Date(validFrom).toISOString() : null,
-          validUntil: validUntil ? new Date(validUntil).toISOString() : null,
-          daysFromActivation: daysFromActivation ? parseInt(daysFromActivation) : null,
-          productIds: selectedProducts,
-          isActive,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
 
       if (res.ok) {
         toast.success('Promoción creada exitosamente');
+        console.log('Promoción creada:', result); // Debug
+
         // Limpiar formulario
         setName('');
         setDescription('');
@@ -156,12 +175,28 @@ export default function NuevaPromocionPage() {
         setDaysFromActivation('');
         setSelectedProducts([]);
         setIsActive(true);
+        setSearchQuery(''); // Limpiar búsqueda también
       } else {
+        console.error('Error del servidor:', result); // Debug
         toast.error(result.error || 'Error al crear la promoción');
+
+        // Mostrar detalles del error si existen
+        if (result.details) {
+          console.error('Detalles del error:', result.details);
+          toast.error(`Detalles: ${result.details}`);
+        }
+
+        // Mostrar errores de validación específicos
+        if (result.errors) {
+          console.error('Errores de validación:', result.errors);
+          Object.entries(result.errors).forEach(([field, error]) => {
+            toast.error(`${field}: ${error}`);
+          });
+        }
       }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al crear la promoción');
+    } catch (error: any) {
+      console.error('Error de red o parsing:', error);
+      toast.error(`Error: ${error.message || 'Error al crear la promoción'}`);
     } finally {
       setIsSubmitting(false);
     }
