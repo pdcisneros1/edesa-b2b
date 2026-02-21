@@ -43,7 +43,7 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
           validFrom: promotion.validFrom ? new Date(promotion.validFrom).toISOString().slice(0, 16) : '',
           validUntil: promotion.validUntil ? new Date(promotion.validUntil).toISOString().slice(0, 16) : '',
           daysFromActivation: promotion.daysFromActivation || null,
-          productIds: promotion.products.map((p) => p.productId),
+          productIds: promotion.products?.map((p) => p.productId) || [],
           isActive: promotion.isActive,
         }
       : {
@@ -80,8 +80,8 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
         },
         body: JSON.stringify({
           ...data,
-          validFrom: data.validFrom ? new Date(data.validFrom).toISOString() : null,
-          validUntil: data.validUntil ? new Date(data.validUntil).toISOString() : null,
+          validFrom: data.validFrom && data.validFrom.trim() !== '' ? new Date(data.validFrom).toISOString() : null,
+          validUntil: data.validUntil && data.validUntil.trim() !== '' ? new Date(data.validUntil).toISOString() : null,
           daysFromActivation: data.daysFromActivation || null,
         }),
       });
