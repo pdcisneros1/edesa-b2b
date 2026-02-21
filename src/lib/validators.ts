@@ -255,13 +255,11 @@ export const promotionSchema = z.object({
   validFrom: z.string().optional(),
   validUntil: z.string().optional(),
   daysFromActivation: z
-    .number({
-      invalid_type_error: 'Debe ser un número válido',
-    })
+    .number()
     .int('Debe ser un número entero')
     .positive('Debe ser mayor a 0')
-    .optional()
-    .nullable(),
+    .nullable()
+    .optional(),
   productIds: z
     .array(z.string())
     .min(1, 'Selecciona al menos un producto'),
