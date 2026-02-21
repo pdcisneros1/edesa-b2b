@@ -31,6 +31,7 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<PromotionFormData>({
     resolver: zodResolver(promotionSchema),
@@ -92,8 +93,25 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
         toast.success(
           mode === 'create' ? 'Promoción creada exitosamente' : 'Promoción actualizada exitosamente'
         );
-        router.push('/admin/promociones');
-        router.refresh();
+
+        if (mode === 'create') {
+          // En modo crear: limpiar formulario y quedarse en la página
+          reset({
+            name: '',
+            description: '',
+            discountType: 'percentage',
+            discountValue: 0,
+            validFrom: '',
+            validUntil: '',
+            daysFromActivation: null,
+            productIds: [],
+            isActive: true,
+          });
+        } else {
+          // En modo editar: redirigir al listado
+          router.push('/admin/promociones');
+          router.refresh();
+        }
       } else {
         toast.error(result.error || 'Error al guardar la promoción');
         if (result.details) {
