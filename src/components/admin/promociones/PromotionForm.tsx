@@ -96,17 +96,8 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
 
         if (mode === 'create') {
           // En modo crear: limpiar formulario y quedarse en la página
-          reset({
-            name: '',
-            description: '',
-            discountType: 'percentage',
-            discountValue: 0,
-            validFrom: '',
-            validUntil: '',
-            daysFromActivation: null,
-            productIds: [],
-            isActive: true,
-          });
+          // Usar reset() sin argumentos para resetear a los defaultValues originales
+          reset();
         } else {
           // En modo editar: redirigir al listado
           router.push('/admin/promociones');
