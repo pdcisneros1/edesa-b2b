@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Download, FileText, Facebook, Twitter, Linkedin, Package, Tag, Layers } from 'lucide-react';
+import { Download, FileText, Facebook, Twitter, Linkedin, Package, Tag, Layers, Percent } from 'lucide-react';
 import prisma from '@/lib/prisma';
 import {
   Breadcrumb,
@@ -18,6 +18,7 @@ import { ProductGrid } from '@/components/products/ProductGrid';
 import { AddToCartButton } from '@/components/products/AddToCartButton';
 import { PriceGate } from '@/components/products/PriceGate';
 import { Button } from '@/components/ui/button';
+import { getActivePromotionForProduct } from '@/types/promotion';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -35,31 +36,147 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
+  const now = new Date();
 
-  const product = await prisma.product.findUnique({
+  const rawProduct = await prisma.product.findUnique({
     where: { slug },
     include: {
       images: { orderBy: { order: 'asc' } },
       specifications: { orderBy: { order: 'asc' } },
       category: true,
       brand: true,
+      promotions: {
+        where: {
+          promotion: {
+            isActive: true,
+            isManuallyDisabled: false,
+            OR: [
+              {
+                validUntil: null,
+                OR: [
+                  { validFrom: null },
+                  { validFrom: { lte: now } },
+                ],
+              },
+              {
+                validUntil: { gte: now },
+                OR: [
+                  { validFrom: null },
+                  { validFrom: { lte: now } },
+                ],
+              },
+            ],
+          },
+        },
+        include: {
+          promotion: true,
+        },
+        take: 1,
+      },
     },
   });
 
-  if (!product) notFound();
+  if (!rawProduct) notFound();
+
+  // Serializar fechas para pasar al Client Component
+  const product = {
+    ...rawProduct,
+    createdAt: rawProduct.createdAt.toISOString(),
+    updatedAt: rawProduct.updatedAt.toISOString(),
+    promotions: rawProduct.promotions?.map((pp) => ({
+      id: pp.id,
+      promotionId: pp.promotionId,
+      productId: pp.productId,
+      activatedAt: pp.activatedAt.toISOString(),
+      promotion: pp.promotion ? {
+        id: pp.promotion.id,
+        name: pp.promotion.name,
+        description: pp.promotion.description,
+        discountType: pp.promotion.discountType,
+        discountValue: pp.promotion.discountValue,
+        validFrom: pp.promotion.validFrom?.toISOString() ?? null,
+        validUntil: pp.promotion.validUntil?.toISOString() ?? null,
+        daysFromActivation: pp.promotion.daysFromActivation,
+        isActive: pp.promotion.isActive,
+        isManuallyDisabled: pp.promotion.isManuallyDisabled,
+        createdAt: pp.promotion.createdAt.toISOString(),
+        updatedAt: pp.promotion.updatedAt.toISOString(),
+      } : undefined,
+    })) ?? [],
+  };
 
   const category = product.category;
   const brand = product.brand;
+  const activePromotion = product.promotions ? getActivePromotionForProduct(product as any) : null;
 
-  const relatedProducts = await prisma.product.findMany({
+  const rawRelatedProducts = await prisma.product.findMany({
     where: {
       categoryId: product.categoryId,
       id: { not: product.id },
       isActive: true,
     },
     take: 4,
-    include: { images: true, category: true, brand: true },
+    include: {
+      images: true,
+      category: true,
+      brand: true,
+      promotions: {
+        where: {
+          promotion: {
+            isActive: true,
+            isManuallyDisabled: false,
+            OR: [
+              {
+                validUntil: null,
+                OR: [
+                  { validFrom: null },
+                  { validFrom: { lte: now } },
+                ],
+              },
+              {
+                validUntil: { gte: now },
+                OR: [
+                  { validFrom: null },
+                  { validFrom: { lte: now } },
+                ],
+              },
+            ],
+          },
+        },
+        include: {
+          promotion: true,
+        },
+        take: 1,
+      },
+    },
   });
+
+  // Serializar fechas para productos relacionados
+  const relatedProducts = rawRelatedProducts.map((p) => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+    promotions: p.promotions?.map((pp) => ({
+      id: pp.id,
+      promotionId: pp.promotionId,
+      productId: pp.productId,
+      activatedAt: pp.activatedAt.toISOString(),
+      promotion: pp.promotion ? {
+        id: pp.promotion.id,
+        name: pp.promotion.name,
+        description: pp.promotion.description,
+        discountType: pp.promotion.discountType,
+        discountValue: pp.promotion.discountValue,
+        validFrom: pp.promotion.validFrom?.toISOString() ?? null,
+        validUntil: pp.promotion.validUntil?.toISOString() ?? null,
+        daysFromActivation: pp.promotion.daysFromActivation,
+        isActive: pp.promotion.isActive,
+        isManuallyDisabled: pp.promotion.isManuallyDisabled,
+        createdAt: pp.promotion.createdAt.toISOString(),
+        updatedAt: pp.promotion.updatedAt.toISOString(),
+      } : undefined,
+    })) ?? [],
+  }));
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -118,12 +235,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
               />
               {/* Badges */}
               <div className="absolute top-3 left-3 flex flex-col gap-2">
+                {activePromotion && activePromotion.promotion && (
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold text-white animate-pulse">
+                    <Percent className="h-3 w-3" />
+                    EN PROMOCIÓN
+                  </span>
+                )}
                 {product.isNew && (
                   <span className="inline-flex items-center rounded-md bg-emerald-500 px-2.5 py-1 text-xs font-bold text-white">
                     Nuevo
                   </span>
                 )}
-                {product.isFeatured && (
+                {!activePromotion && product.isFeatured && (
                   <span className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-xs font-bold text-white">
                     Destacado
                   </span>
@@ -192,6 +315,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 price={product.price}
                 wholesalePrice={(product as any).wholesalePrice}
                 compareAtPrice={product.compareAtPrice}
+                promotion={activePromotion?.promotion}
                 redirectAfterLogin={`/productos/${product.slug}`}
               />
 

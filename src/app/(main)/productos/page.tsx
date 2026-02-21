@@ -44,11 +44,45 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     whereClause.price = priceFilter;
   }
 
-  const [products, categories, brands] = await Promise.all([
+  const now = new Date();
+
+  const [rawProducts, categories, brands] = await Promise.all([
     prisma.product.findMany({
       where: whereClause,
       orderBy: getOrderBy(sort),
-      include: { images: true, category: true, brand: true },
+      include: {
+        images: true,
+        category: true,
+        brand: true,
+        promotions: {
+          where: {
+            promotion: {
+              isActive: true,
+              isManuallyDisabled: false,
+              OR: [
+                {
+                  validUntil: null,
+                  OR: [
+                    { validFrom: null },
+                    { validFrom: { lte: now } },
+                  ],
+                },
+                {
+                  validUntil: { gte: now },
+                  OR: [
+                    { validFrom: null },
+                    { validFrom: { lte: now } },
+                  ],
+                },
+              ],
+            },
+          },
+          include: {
+            promotion: true,
+          },
+          take: 1,
+        },
+      },
     }),
     prisma.category.findMany({
       where: { parentId: null },
@@ -56,6 +90,39 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     }),
     prisma.brand.findMany({ orderBy: { name: 'asc' } }),
   ]);
+
+  // Serializar fechas para pasar al Client Component
+  const products = rawProducts.map((product) => ({
+    ...product,
+    createdAt: product.createdAt.toISOString(),
+    updatedAt: product.updatedAt.toISOString(),
+    category: product.category ? {
+      ...product.category,
+    } : undefined,
+    brand: product.brand ? {
+      ...product.brand,
+    } : undefined,
+    promotions: product.promotions?.map((pp) => ({
+      id: pp.id,
+      promotionId: pp.promotionId,
+      productId: pp.productId,
+      activatedAt: pp.activatedAt.toISOString(),
+      promotion: pp.promotion ? {
+        id: pp.promotion.id,
+        name: pp.promotion.name,
+        description: pp.promotion.description,
+        discountType: pp.promotion.discountType,
+        discountValue: pp.promotion.discountValue,
+        validFrom: pp.promotion.validFrom?.toISOString() ?? null,
+        validUntil: pp.promotion.validUntil?.toISOString() ?? null,
+        daysFromActivation: pp.promotion.daysFromActivation,
+        isActive: pp.promotion.isActive,
+        isManuallyDisabled: pp.promotion.isManuallyDisabled,
+        createdAt: pp.promotion.createdAt.toISOString(),
+        updatedAt: pp.promotion.updatedAt.toISOString(),
+      } : undefined,
+    })) ?? [],
+  }));
 
   const hasFilters = categoryId || brandId || minPrice || maxPrice;
 

@@ -5,24 +5,24 @@ export type DiscountType = 'percentage' | 'fixed';
 export interface Promotion {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   discountType: DiscountType;
   discountValue: number;
-  validFrom?: Date;
-  validUntil?: Date;
-  daysFromActivation?: number;
+  validFrom?: Date | string | null;
+  validUntil?: Date | string | null;
+  daysFromActivation?: number | null;
   isActive: boolean;
   isManuallyDisabled: boolean;
   products?: PromotionProduct[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export interface PromotionProduct {
   id: string;
   promotionId: string;
   productId: string;
-  activatedAt: Date;
+  activatedAt: Date | string;
   promotion?: Promotion;
   product?: Product;
 }
@@ -47,7 +47,7 @@ export function calculatePromotionPrice(
 /**
  * Verifica si una promoción está vigente basándose en fechas y días desde activación
  */
-export function isPromotionValid(promotion: Promotion, activatedAt?: Date): boolean {
+export function isPromotionValid(promotion: Promotion, activatedAt?: Date | string): boolean {
   // Si está manualmente desactivada, no es válida
   if (promotion.isManuallyDisabled || !promotion.isActive) {
     return false;
@@ -56,17 +56,29 @@ export function isPromotionValid(promotion: Promotion, activatedAt?: Date): bool
   const now = new Date();
 
   // Verificar validez por fechas
-  if (promotion.validFrom && now < new Date(promotion.validFrom)) {
-    return false;
+  if (promotion.validFrom) {
+    const validFromDate = typeof promotion.validFrom === 'string'
+      ? new Date(promotion.validFrom)
+      : promotion.validFrom;
+    if (now < validFromDate) {
+      return false;
+    }
   }
 
-  if (promotion.validUntil && now > new Date(promotion.validUntil)) {
-    return false;
+  if (promotion.validUntil) {
+    const validUntilDate = typeof promotion.validUntil === 'string'
+      ? new Date(promotion.validUntil)
+      : promotion.validUntil;
+    if (now > validUntilDate) {
+      return false;
+    }
   }
 
   // Verificar validez por días desde activación
   if (promotion.daysFromActivation && activatedAt) {
-    const activationDate = new Date(activatedAt);
+    const activationDate = typeof activatedAt === 'string'
+      ? new Date(activatedAt)
+      : activatedAt;
     const expirationDate = new Date(activationDate);
     expirationDate.setDate(expirationDate.getDate() + promotion.daysFromActivation);
 

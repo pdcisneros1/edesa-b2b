@@ -28,8 +28,9 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q } = await searchParams;
   const query = (q || '').trim();
+  const now = new Date();
 
-  const results = query
+  const rawResults = query
     ? await prisma.product.findMany({
         where: {
           isActive: true,
@@ -40,11 +41,70 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             { description: { contains: query, mode: 'insensitive' } },
           ],
         },
-        include: { images: true, category: true, brand: true },
+        include: {
+          images: true,
+          category: true,
+          brand: true,
+          promotions: {
+            where: {
+              promotion: {
+                isActive: true,
+                isManuallyDisabled: false,
+                OR: [
+                  {
+                    validUntil: null,
+                    OR: [
+                      { validFrom: null },
+                      { validFrom: { lte: now } },
+                    ],
+                  },
+                  {
+                    validUntil: { gte: now },
+                    OR: [
+                      { validFrom: null },
+                      { validFrom: { lte: now } },
+                    ],
+                  },
+                ],
+              },
+            },
+            include: {
+              promotion: true,
+            },
+            take: 1,
+          },
+        },
         orderBy: { name: 'asc' },
         take: 48,
       })
     : [];
+
+  // Serializar fechas para pasar al Client Component
+  const results = rawResults.map((product) => ({
+    ...product,
+    createdAt: product.createdAt.toISOString(),
+    updatedAt: product.updatedAt.toISOString(),
+    promotions: product.promotions?.map((pp) => ({
+      id: pp.id,
+      promotionId: pp.promotionId,
+      productId: pp.productId,
+      activatedAt: pp.activatedAt.toISOString(),
+      promotion: pp.promotion ? {
+        id: pp.promotion.id,
+        name: pp.promotion.name,
+        description: pp.promotion.description,
+        discountType: pp.promotion.discountType,
+        discountValue: pp.promotion.discountValue,
+        validFrom: pp.promotion.validFrom?.toISOString() ?? null,
+        validUntil: pp.promotion.validUntil?.toISOString() ?? null,
+        daysFromActivation: pp.promotion.daysFromActivation,
+        isActive: pp.promotion.isActive,
+        isManuallyDisabled: pp.promotion.isManuallyDisabled,
+        createdAt: pp.promotion.createdAt.toISOString(),
+        updatedAt: pp.promotion.updatedAt.toISOString(),
+      } : undefined,
+    })) ?? [],
+  }));
 
   return (
     <div className="bg-gray-50 min-h-screen">

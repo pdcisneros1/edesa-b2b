@@ -93,6 +93,39 @@ export async function PromotedProducts() {
       return null;
     }
 
+    // Serializar fechas para pasar al Client Component
+    const serializedProducts = promotedProducts.map((product) => ({
+      ...product,
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+      category: product.category ? {
+        ...product.category,
+      } : undefined,
+      brand: product.brand ? {
+        ...product.brand,
+      } : undefined,
+      promotions: product.promotions?.map((pp) => ({
+        id: pp.id,
+        promotionId: pp.promotionId,
+        productId: pp.productId,
+        activatedAt: pp.activatedAt.toISOString(),
+        promotion: pp.promotion ? {
+          id: pp.promotion.id,
+          name: pp.promotion.name,
+          description: pp.promotion.description,
+          discountType: pp.promotion.discountType,
+          discountValue: pp.promotion.discountValue,
+          validFrom: pp.promotion.validFrom?.toISOString() ?? null,
+          validUntil: pp.promotion.validUntil?.toISOString() ?? null,
+          daysFromActivation: pp.promotion.daysFromActivation,
+          isActive: pp.promotion.isActive,
+          isManuallyDisabled: pp.promotion.isManuallyDisabled,
+          createdAt: pp.promotion.createdAt.toISOString(),
+          updatedAt: pp.promotion.updatedAt.toISOString(),
+        } : undefined,
+      })) ?? [],
+    }));
+
     return (
     <section className="relative overflow-hidden bg-gradient-to-br from-red-600 via-red-700 to-red-800 py-16">
       {/* Patrón de fondo con puntos */}
@@ -123,7 +156,7 @@ export async function PromotedProducts() {
 
         {/* Grid de productos */}
         <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/20 p-6">
-          <ProductGrid products={promotedProducts as any} />
+          <ProductGrid products={serializedProducts as any} />
         </div>
 
         {/* Footer con aviso de tiempo limitado */}
