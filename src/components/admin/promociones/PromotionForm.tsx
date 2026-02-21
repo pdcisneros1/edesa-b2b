@@ -40,9 +40,9 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
           description: promotion.description || '',
           discountType: promotion.discountType,
           discountValue: promotion.discountValue,
-          validFrom: promotion.validFrom ? new Date(promotion.validFrom) : null,
-          validUntil: promotion.validUntil ? new Date(promotion.validUntil) : null,
-          daysFromActivation: promotion.daysFromActivation || null,
+          validFrom: promotion.validFrom ? new Date(promotion.validFrom).toISOString().slice(0, 16) : '',
+          validUntil: promotion.validUntil ? new Date(promotion.validUntil).toISOString().slice(0, 16) : '',
+          daysFromActivation: promotion.daysFromActivation || undefined,
           productIds: promotion.products.map((p) => p.productId),
           isActive: promotion.isActive,
         }
@@ -51,9 +51,9 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
           description: '',
           discountType: 'percentage',
           discountValue: 0,
-          validFrom: null,
-          validUntil: null,
-          daysFromActivation: null,
+          validFrom: '',
+          validUntil: '',
+          daysFromActivation: undefined,
           productIds: [],
           isActive: true,
         },
@@ -80,8 +80,9 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
         },
         body: JSON.stringify({
           ...data,
-          validFrom: data.validFrom ? data.validFrom.toISOString() : null,
-          validUntil: data.validUntil ? data.validUntil.toISOString() : null,
+          validFrom: data.validFrom ? new Date(data.validFrom).toISOString() : null,
+          validUntil: data.validUntil ? new Date(data.validUntil).toISOString() : null,
+          daysFromActivation: data.daysFromActivation || null,
         }),
       });
 
@@ -292,7 +293,7 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
               <Input
                 id="validFrom"
                 type="datetime-local"
-                {...register('validFrom', { valueAsDate: true })}
+                {...register('validFrom')}
               />
               <p className="text-xs text-muted-foreground">
                 Si no se especifica, inicia inmediatamente
@@ -304,7 +305,7 @@ export function PromotionForm({ promotion, mode }: PromotionFormProps) {
               <Input
                 id="validUntil"
                 type="datetime-local"
-                {...register('validUntil', { valueAsDate: true })}
+                {...register('validUntil')}
               />
               <p className="text-xs text-muted-foreground">
                 Si no se especifica, no expira por fecha

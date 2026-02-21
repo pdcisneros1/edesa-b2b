@@ -252,13 +252,12 @@ export const promotionSchema = z.object({
   discountValue: z
     .number()
     .min(0, 'El valor debe ser mayor o igual a 0'),
-  validFrom: z.date().nullable().optional(),
-  validUntil: z.date().nullable().optional(),
+  validFrom: z.string().optional(),
+  validUntil: z.string().optional(),
   daysFromActivation: z
     .number()
     .int('Debe ser un número entero')
     .positive('Debe ser mayor a 0')
-    .nullable()
     .optional(),
   productIds: z
     .array(z.string())
