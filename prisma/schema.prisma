@@ -82,6 +82,12 @@ model Product {
   compareAtPrice   Float?
   costPrice        Float?
   stock            Int                    @default(0)
+  // Inventario Inteligente
+  safetyStock      Int?  // Stock de seguridad (manual o sugerido)
+  reorderPoint     Int?  // Punto de reorden (cuando alcanzar para ordenar)
+  reorderQuantity  Int?  // Cantidad a ordenar cuando se alcanza punto de reorden
+  leadTimeDays     Int?  @default(7) // Días de espera del proveedor
+  averageMonthlySales Float? // Promedio ventas/mes (calculado automáticamente)
   categoryId       String
   category         Category               @relation(fields: [categoryId], references: [id])
   brandId          String?
