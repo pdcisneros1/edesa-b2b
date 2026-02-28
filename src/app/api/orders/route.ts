@@ -328,9 +328,26 @@ export async function POST(request: NextRequest) {
 
     const order = prismaOrderToLocal(dbOrder);
 
-    // 📧 Enviar email de confirmación de pedido (no bloquear la respuesta)
+    // 📧 Enviar email de confirmación de pedido con PDF adjunto (no bloquear la respuesta)
     try {
       const { sendOrderConfirmationEmail } = await import('@/lib/email');
+
+      // 📎 Generar PDF de factura
+      let pdfBuffer: Buffer | undefined;
+      try {
+        const { renderToBuffer } = await import('@react-pdf/renderer');
+        const { InvoicePDF } = await import('@/components/pdf/InvoicePDF');
+        const React = await import('react');
+
+        const pdfDocument = React.createElement(InvoicePDF, { order } as any);
+        pdfBuffer = await renderToBuffer(pdfDocument as any);
+        console.log(`✅ PDF generado: ${pdfBuffer.length} bytes`);
+      } catch (pdfError) {
+        console.error('⚠️ Error al generar PDF (email se enviará sin adjunto):', pdfError);
+        // Continuar sin PDF - no fallar el email
+      }
+
+      // Enviar email con o sin PDF
       await sendOrderConfirmationEmail(
         order.customerEmail,
         {
@@ -338,7 +355,8 @@ export async function POST(request: NextRequest) {
           customerName: order.customerName,
           total: order.total,
           items: order.items,
-        }
+        },
+        pdfBuffer
       );
     } catch (emailError) {
       console.error('❌ Error al enviar email de confirmación:', emailError);
