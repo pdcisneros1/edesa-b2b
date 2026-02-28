@@ -3,13 +3,14 @@ import {
   Button,
   Container,
   Head,
-  Heading,
   Hr,
   Html,
   Preview,
   Section,
   Text,
 } from '@react-email/components';
+import { EmailHeader } from './components/EmailHeader';
+import { EmailFooter } from './components/EmailFooter';
 
 interface OrderStatusEmailProps {
   orderNumber: string;
@@ -52,7 +53,10 @@ export function OrderStatusEmail({
       <Preview>Actualización de Pedido {orderNumber} - {statusText}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Actualización de Pedido</Heading>
+          <EmailHeader
+            title="Actualización de Pedido"
+            subtitle={`Pedido ${orderNumber}`}
+          />
 
           <Text style={text}>Hola {customerName},</Text>
 
@@ -75,14 +79,7 @@ export function OrderStatusEmail({
             </Button>
           </Section>
 
-          <Hr style={hr} />
-
-          <Text style={footer}>
-            Si tienes alguna pregunta, contáctanos:<br />
-            <strong>EDESA VENTAS</strong><br />
-            Email: pedidos@edesaventas.ec<br />
-            Teléfono: +593 999 999 999
-          </Text>
+          <EmailFooter />
         </Container>
       </Body>
     </Html>
@@ -98,17 +95,9 @@ const main = {
 const container = {
   backgroundColor: '#ffffff',
   margin: '0 auto',
-  padding: '20px 0 48px',
+  padding: '0',
   marginBottom: '64px',
   maxWidth: '600px',
-};
-
-const h1 = {
-  color: '#333',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '40px 0',
-  padding: '0 40px',
 };
 
 const text = {
@@ -155,16 +144,4 @@ const button = {
   display: 'block',
   width: '100%',
   padding: '12px',
-};
-
-const hr = {
-  borderColor: '#e6ebf1',
-  margin: '20px 40px',
-};
-
-const footer = {
-  color: '#8898aa',
-  fontSize: '14px',
-  lineHeight: '24px',
-  padding: '0 40px',
 };

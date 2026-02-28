@@ -3,13 +3,14 @@ import {
   Button,
   Container,
   Head,
-  Heading,
   Hr,
   Html,
   Preview,
   Section,
   Text,
 } from '@react-email/components';
+import { EmailHeader } from './components/EmailHeader';
+import { EmailFooter } from './components/EmailFooter';
 
 interface WelcomeEmailProps {
   userName: string;
@@ -24,7 +25,10 @@ export function WelcomeEmail({ userName }: WelcomeEmailProps) {
       <Preview>¡Bienvenido a EDESA VENTAS! Tu cuenta ha sido creada exitosamente.</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>¡Bienvenido a EDESA VENTAS!</Heading>
+          <EmailHeader
+            title="¡Bienvenido a EDESA VENTAS!"
+            subtitle="Tu cuenta ha sido creada exitosamente"
+          />
 
           <Text style={text}>Hola {userName},</Text>
 
@@ -52,14 +56,7 @@ export function WelcomeEmail({ userName }: WelcomeEmailProps) {
             ✓ Descuentos especiales
           </Text>
 
-          <Hr style={hr} />
-
-          <Text style={footer}>
-            Si tienes alguna pregunta, no dudes en contactarnos.<br />
-            <strong>EDESA VENTAS</strong><br />
-            Email: pedidos@edesaventas.ec<br />
-            Teléfono: +593 999 999 999
-          </Text>
+          <EmailFooter />
         </Container>
       </Body>
     </Html>
@@ -75,17 +72,9 @@ const main = {
 const container = {
   backgroundColor: '#ffffff',
   margin: '0 auto',
-  padding: '20px 0 48px',
+  padding: '0',
   marginBottom: '64px',
   maxWidth: '600px',
-};
-
-const h1 = {
-  color: '#333',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '40px 0',
-  padding: '0 40px',
 };
 
 const text = {
@@ -115,11 +104,4 @@ const button = {
 const hr = {
   borderColor: '#e6ebf1',
   margin: '20px 40px',
-};
-
-const footer = {
-  color: '#8898aa',
-  fontSize: '14px',
-  lineHeight: '24px',
-  padding: '0 40px',
 };
