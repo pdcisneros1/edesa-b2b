@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useCheckout } from '@/context/CheckoutContext';
+import { useCsrfFetch } from '@/hooks/useCsrfFetch';
 import { CheckoutSteps } from '@/components/checkout/CheckoutSteps';
 import { OrderReview } from '@/components/checkout/OrderReview';
 import { PaymentMethodSelector } from '@/components/checkout/PaymentMethodSelector';
@@ -27,6 +28,7 @@ export default function CheckoutConfirmationPage() {
     customerInfo, shippingAddress, shippingMethod, paymentMethod,
     setPaymentMethod, notes, clearCheckout,
   } = useCheckout();
+  const { csrfFetch } = useCsrfFetch();
 
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -82,9 +84,8 @@ export default function CheckoutConfirmationPage() {
         })),
       };
 
-      const res = await fetch('/api/orders', {
+      const res = await csrfFetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
