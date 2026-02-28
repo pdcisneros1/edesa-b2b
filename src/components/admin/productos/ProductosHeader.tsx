@@ -57,26 +57,37 @@ export function ProductosHeader({ products, showLowStockFilter }: ProductosHeade
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold">Productos</h1>
           <p className="text-muted-foreground">
             Gestiona el catálogo de productos
           </p>
         </div>
-        <div className="flex gap-2">
-          {products.length > 0 && (
-            <ExportButton
-              data={exportData}
-              filename={showLowStockFilter ? 'productos-stock-bajo' : 'productos'}
-              columns={exportColumns}
-              title={showLowStockFilter ? 'Productos con Stock Bajo' : 'Reporte de Productos'}
-            />
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            {products.length > 0 && (
+              <ExportButton
+                data={exportData}
+                filename={showLowStockFilter ? 'productos-stock-bajo' : 'productos'}
+                columns={exportColumns}
+                title={showLowStockFilter ? 'Productos con Stock Bajo' : 'Reporte de Productos'}
+              />
+            )}
+            <Button onClick={() => router.push('/admin/productos/nuevo')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Producto
+            </Button>
+          </div>
+          {!showLowStockFilter && (
+            <Button
+              onClick={() => router.push('/admin/productos?lowStock=true')}
+              className="bg-orange-600 hover:bg-orange-700 w-full"
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Productos Bajo Stock
+            </Button>
           )}
-          <Button onClick={() => router.push('/admin/productos/nuevo')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Producto
-          </Button>
         </div>
       </div>
 
