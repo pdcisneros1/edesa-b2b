@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { formatPrice } from '@/lib/format';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { QuickPurchaseCell } from '@/components/admin/QuickPurchaseCell';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -117,6 +118,9 @@ export function ProductsTable({ products: initialProducts, showLowStockFilter }:
               <TableHead>Precio</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Estado</TableHead>
+              {showLowStockFilter && (
+                <TableHead className="w-40">Comprar</TableHead>
+              )}
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -220,6 +224,15 @@ export function ProductsTable({ products: initialProducts, showLowStockFilter }:
                     )}
                   </div>
                 </TableCell>
+                {showLowStockFilter && (
+                  <TableCell>
+                    <QuickPurchaseCell
+                      productId={product.id}
+                      productName={product.name}
+                      currentStock={product.stock}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Link href={`/productos/${product.slug}`} target="_blank" rel="noopener noreferrer">
