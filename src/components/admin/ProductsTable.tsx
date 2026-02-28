@@ -33,9 +33,10 @@ import {
 
 interface ProductsTableProps {
   products: Product[];
+  showLowStockFilter?: boolean;
 }
 
-export function ProductsTable({ products: initialProducts }: ProductsTableProps) {
+export function ProductsTable({ products: initialProducts, showLowStockFilter }: ProductsTableProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -161,7 +162,13 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={product.stock > 10 ? 'default' : 'destructive'}
+                    className={
+                      product.stock === 0
+                        ? 'bg-red-100 text-red-700 hover:bg-red-100'
+                        : product.stock < 10
+                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-100'
+                        : 'bg-green-100 text-green-700 hover:bg-green-100'
+                    }
                   >
                     {product.stock} unid.
                   </Badge>

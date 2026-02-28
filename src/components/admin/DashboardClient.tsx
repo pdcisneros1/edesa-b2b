@@ -226,7 +226,7 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
                 <p className="text-xs text-amber-700 mt-0.5">
                   Menos de 10 unidades disponibles. Considera reabastecer pronto.
                 </p>
-                <Link href="/admin/productos">
+                <Link href="/admin/productos?lowStock=true">
                   <Button
                     variant="outline"
                     size="sm"
