@@ -27,9 +27,9 @@ export async function FeaturedProducts() {
   if (products.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-16 bg-gray-50 border-t border-gray-100">
-      <div className="container">
-        <div className="flex items-end justify-between mb-8 animate-fade-in">
+    <section className="bg-gray-50 border-t border-gray-100 py-14 md:py-20">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+        <div className="flex items-end justify-between mb-10 animate-fade-in-up opacity-0">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1.5">
               {isFeaturedSection ? 'Selección especial' : 'Catálogo'}
@@ -47,7 +47,7 @@ export async function FeaturedProducts() {
             asChild
             variant="outline"
             size="sm"
-            className="hidden sm:flex gap-1.5 text-sm font-medium h-8"
+            className="hidden sm:flex gap-1.5 text-sm font-medium"
           >
             <Link href="/productos">
               Ver Todos

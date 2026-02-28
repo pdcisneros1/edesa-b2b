@@ -1,115 +1,250 @@
 /**
- * Rate limiter en memoria con ventana deslizante (sliding window).
- * Apropiado para despliegues single-instance (Vercel, un solo servidor).
- * Para multi-instance en producción, migrar a Redis con ioredis.
+ * ============================================================================
+ * RATE LIMITING CON UPSTASH REDIS
+ * ============================================================================
  *
- * NO exponer ningún detalle de implementación al cliente.
+ * Sistema de rate limiting profesional usando Upstash Redis con ventana
+ * deslizante (sliding window) para control preciso de requests.
+ *
+ * Características:
+ * - Ventana deslizante para evitar "burst" attacks al final de ventanas fijas
+ * - Persistencia en Redis (funciona en multi-instance/serverless)
+ * - Límites por IP, email, o cualquier identificador
+ * - Compatible con Vercel Edge Functions
+ *
+ * Variables de entorno requeridas:
+ * - UPSTASH_REDIS_REST_URL
+ * - UPSTASH_REDIS_REST_TOKEN
+ * ============================================================================
  */
 
-interface RateLimitEntry {
-  /** Timestamps de solicitudes en la ventana actual */
-  timestamps: number[];
-  /** Si el IP/key está bloqueado temporalmente */
-  blockedUntil?: number;
+import { Redis } from '@upstash/redis';
+
+// Cliente Redis singleton
+let redisClient: Redis | null = null;
+
+/**
+ * Obtiene o crea el cliente Redis usando REST API de Upstash.
+ * Singleton pattern para reutilizar la conexión.
+ */
+function getRedisClient(): Redis | null {
+  if (redisClient) {
+    return redisClient;
+  }
+
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    console.warn(
+      '⚠️  Redis credentials no configuradas. Rate limiting deshabilitado. ' +
+      'Configura UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN en .env'
+    );
+    return null;
+  }
+
+  try {
+    redisClient = new Redis({
+      url,
+      token,
+    });
+    return redisClient;
+  } catch (error) {
+    console.error('❌ Error al conectar con Upstash Redis:', error);
+    return null;
+  }
 }
 
-interface RateLimitConfig {
-  /** Número máximo de solicitudes permitidas en la ventana */
-  maxRequests: number;
-  /** Tamaño de la ventana en milisegundos */
-  windowMs: number;
-  /** Tiempo de bloqueo en ms si se excede el límite (default: windowMs) */
-  blockDurationMs?: number;
-}
+/**
+ * Verifica si un identificador ha excedido el límite de rate.
+ *
+ * Algoritmo de ventana deslizante:
+ * 1. Guarda timestamps de cada request en un sorted set (ZADD)
+ * 2. Elimina timestamps fuera de la ventana (ZREMRANGEBYSCORE)
+ * 3. Cuenta requests en la ventana actual (ZCARD)
+ * 4. Si excede límite, retorna false; si no, retorna true
+ *
+ * @param identifier - Identificador único (IP, email, userId, etc.)
+ * @param limit - Número máximo de requests permitidos
+ * @param windowSeconds - Tamaño de la ventana en segundos
+ * @returns true si está dentro del límite, false si excede
+ *
+ * @example
+ * const allowed = await checkRateLimit('192.168.1.1', 5, 900); // 5 requests en 15 min
+ * if (!allowed) {
+ *   return res.status(429).json({ error: 'Too many requests' });
+ * }
+ */
+export async function checkRateLimit(
+  identifier: string,
+  limit: number,
+  windowSeconds: number
+): Promise<boolean> {
+  const redis = getRedisClient();
 
-// Store global en memoria
-const store = new Map<string, RateLimitEntry>();
+  // Si Redis no está disponible, permitir el request (fail-open)
+  // En producción, considera fail-closed (return false) para mayor seguridad
+  if (!redis) {
+    return true;
+  }
 
-// Limpieza periódica para evitar memory leaks (cada 5 minutos)
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  try {
     const now = Date.now();
-    for (const [key, entry] of store.entries()) {
-      // Eliminar entradas cuyo bloqueo expiró y sin timestamps recientes
-      const isBlocked = entry.blockedUntil && entry.blockedUntil > now;
-      const hasRecentTimestamps = entry.timestamps.some((t) => t > now - 60 * 60 * 1000);
-      if (!isBlocked && !hasRecentTimestamps) {
-        store.delete(key);
-      }
+    const windowMs = windowSeconds * 1000;
+    const windowStart = now - windowMs;
+    const key = `ratelimit:${identifier}`;
+
+    // Pipeline de comandos Redis para atomicidad
+    const pipeline = redis.pipeline();
+
+    // 1. Eliminar timestamps fuera de la ventana
+    pipeline.zremrangebyscore(key, 0, windowStart);
+
+    // 2. Contar requests en la ventana actual
+    pipeline.zcard(key);
+
+    // 3. Agregar el timestamp actual (optimista - se elimina si excede)
+    pipeline.zadd(key, { score: now, member: `${now}:${Math.random()}` });
+
+    // 4. Establecer TTL para auto-limpieza (ventana + 1 hora de margen)
+    pipeline.expire(key, windowSeconds + 3600);
+
+    const results = await pipeline.exec();
+
+    // results[1] contiene el count ANTES de agregar el nuevo timestamp
+    const currentCount = (results[1] as number) || 0;
+
+    // Si ya está en el límite o lo excede, eliminar el timestamp que acabamos de agregar
+    if (currentCount >= limit) {
+      // Eliminar el último timestamp agregado
+      await redis.zremrangebyrank(key, -1, -1);
+      return false; // Excede el límite
     }
-  }, 5 * 60 * 1000);
+
+    return true; // Dentro del límite
+  } catch (error) {
+    console.error('❌ Error en rate limiting:', error);
+    // En caso de error, permitir el request (fail-open)
+    return true;
+  }
 }
 
 /**
- * Verifica si una clave (IP o email) ha excedido el límite de solicitudes.
- * @returns `{ limited: true, retryAfterMs }` si está limitado, `{ limited: false }` si no.
+ * Reinicia el rate limit para un identificador.
+ * Útil después de un login exitoso para limpiar intentos fallidos.
+ *
+ * @param identifier - Identificador a reiniciar
  */
-export function checkRateLimit(
-  key: string,
-  config: RateLimitConfig
-): { limited: false } | { limited: true; retryAfterMs: number } {
-  const { maxRequests, windowMs, blockDurationMs = windowMs } = config;
-  const now = Date.now();
+export async function resetRateLimit(identifier: string): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) return;
 
-  let entry = store.get(key);
-
-  if (!entry) {
-    entry = { timestamps: [] };
-    store.set(key, entry);
+  try {
+    const key = `ratelimit:${identifier}`;
+    await redis.del(key);
+  } catch (error) {
+    console.error('❌ Error al reiniciar rate limit:', error);
   }
-
-  // Verificar si está bloqueado
-  if (entry.blockedUntil && entry.blockedUntil > now) {
-    return { limited: true, retryAfterMs: entry.blockedUntil - now };
-  }
-
-  // Limpiar timestamps fuera de la ventana
-  entry.timestamps = entry.timestamps.filter((t) => t > now - windowMs);
-
-  if (entry.timestamps.length >= maxRequests) {
-    // Bloquear por blockDurationMs
-    entry.blockedUntil = now + blockDurationMs;
-    return { limited: true, retryAfterMs: blockDurationMs };
-  }
-
-  // Registrar esta solicitud
-  entry.timestamps.push(now);
-  return { limited: false };
 }
 
 /**
- * Reinicia el contador para una clave (usar tras login exitoso para limpiar intentos fallidos).
+ * Obtiene información sobre el rate limit actual de un identificador.
+ *
+ * @param identifier - Identificador a consultar
+ * @param windowSeconds - Tamaño de la ventana en segundos
+ * @returns Objeto con información del rate limit
  */
-export function resetRateLimit(key: string): void {
-  store.delete(key);
+export async function getRateLimitInfo(
+  identifier: string,
+  windowSeconds: number
+): Promise<{
+  count: number;
+  remaining: number;
+  resetAt: Date;
+} | null> {
+  const redis = getRedisClient();
+  if (!redis) return null;
+
+  try {
+    const now = Date.now();
+    const windowMs = windowSeconds * 1000;
+    const windowStart = now - windowMs;
+    const key = `ratelimit:${identifier}`;
+
+    // Limpiar y contar
+    await redis.zremrangebyscore(key, 0, windowStart);
+    const count = await redis.zcard(key);
+
+    // Obtener el timestamp más antiguo para calcular resetAt
+    const oldestTimestamps = await redis.zrange<Array<{ score: number; member: string }>>(
+      key,
+      0,
+      0,
+      { withScores: true }
+    );
+    const oldestTimestamp = (oldestTimestamps && oldestTimestamps[0]?.score) || now;
+    const resetAt = new Date(oldestTimestamp + windowMs);
+
+    return {
+      count,
+      remaining: Math.max(0, count),
+      resetAt,
+    };
+  } catch (error) {
+    console.error('❌ Error al obtener info de rate limit:', error);
+    return null;
+  }
 }
 
-// ─── Configuraciones predefinidas ────────────────────────────────────────────
+// ─── CONFIGURACIONES PREDEFINIDAS ────────────────────────────────────────────
 
-/** Login: 10 intentos por ventana de 15 minutos, bloqueo de 1 minuto (temporal para desbloqueo) */
-export const LOGIN_RATE_LIMIT: RateLimitConfig = {
-  maxRequests: 10,
-  windowMs: 15 * 60 * 1000,
-  blockDurationMs: 1 * 60 * 1000, // Reducido temporalmente de 15min a 1min
-};
+/**
+ * Configuración para login:
+ * - 5 intentos máximo
+ * - Ventana de 15 minutos (900 segundos)
+ */
+export const LOGIN_RATE_LIMIT = {
+  maxRequests: 5,
+  windowSeconds: 15 * 60, // 900 segundos = 15 minutos
+} as const;
 
-/** Registro: 3 intentos por IP por ventana de 1 hora */
-export const REGISTER_RATE_LIMIT: RateLimitConfig = {
+/**
+ * Configuración para registro:
+ * - 3 intentos máximo
+ * - Ventana de 1 hora (3600 segundos)
+ */
+export const REGISTER_RATE_LIMIT = {
   maxRequests: 3,
-  windowMs: 60 * 60 * 1000,
-  blockDurationMs: 60 * 60 * 1000,
-};
+  windowSeconds: 60 * 60, // 3600 segundos = 1 hora
+} as const;
 
-/** Checkout: 10 pedidos por IP por ventana de 1 hora */
-export const CHECKOUT_RATE_LIMIT: RateLimitConfig = {
+/**
+ * Configuración para checkout:
+ * - 10 pedidos máximo
+ * - Ventana de 1 hora (3600 segundos)
+ */
+export const CHECKOUT_RATE_LIMIT = {
   maxRequests: 10,
-  windowMs: 60 * 60 * 1000,
-  blockDurationMs: 60 * 60 * 1000,
-};
+  windowSeconds: 60 * 60, // 3600 segundos = 1 hora
+} as const;
+
+/**
+ * Configuración para operaciones generales de API:
+ * - 100 requests máximo
+ * - Ventana de 1 minuto (60 segundos)
+ */
+export const API_RATE_LIMIT = {
+  maxRequests: 100,
+  windowSeconds: 60, // 60 segundos = 1 minuto
+} as const;
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 /**
  * Extrae el IP real del request, respetando proxies de confianza (Vercel, Cloudflare).
- * Si no hay IP disponible (tests, localhost sin proxy), usa fallback.
+ *
+ * @param request - Request object (fetch API)
+ * @returns IP address del cliente
  */
 export function getClientIp(request: Request): string {
   // Vercel / Cloudflare envían el IP real en estos headers
@@ -123,6 +258,45 @@ export function getClientIp(request: Request): string {
   const realIp = request.headers.get('x-real-ip');
   if (realIp) return realIp.trim();
 
-  // Fallback para entornos locales sin proxy
+  // Fallback para entornos locales
   return '127.0.0.1';
+}
+
+/**
+ * Helper para aplicar rate limiting con respuesta estandarizada.
+ *
+ * @param identifier - Identificador (IP, email, etc.)
+ * @param limit - Número máximo de requests
+ * @param windowSeconds - Ventana en segundos
+ * @returns null si permitido, Response con 429 si bloqueado
+ *
+ * @example
+ * const rateLimit = await applyRateLimit(ip, 5, 900);
+ * if (rateLimit) return rateLimit;
+ */
+export async function applyRateLimit(
+  identifier: string,
+  limit: number,
+  windowSeconds: number
+): Promise<Response | null> {
+  const allowed = await checkRateLimit(identifier, limit, windowSeconds);
+
+  if (!allowed) {
+    const retryAfterSeconds = Math.ceil(windowSeconds / 60); // Estimación conservadora
+    return new Response(
+      JSON.stringify({
+        error: 'Demasiadas solicitudes. Intenta nuevamente más tarde.',
+        retryAfter: retryAfterSeconds,
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(retryAfterSeconds),
+        },
+      }
+    );
+  }
+
+  return null;
 }

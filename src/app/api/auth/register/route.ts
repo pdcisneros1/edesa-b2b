@@ -6,16 +6,24 @@ import { registerSchema } from '@/lib/validators';
 import { checkRateLimit, getClientIp, REGISTER_RATE_LIMIT } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
-  // Rate limiting por IP: máx 3 registros/hora por IP
+  // 🔒 RATE LIMITING: 3 registros por hora por IP
   const ip = getClientIp(request);
-  const ipCheck = checkRateLimit(`register:ip:${ip}`, REGISTER_RATE_LIMIT);
-  if (ipCheck.limited) {
-    const retryAfterSecs = Math.ceil(ipCheck.retryAfterMs / 1000);
+  const ipAllowed = await checkRateLimit(
+    `register:ip:${ip}`,
+    REGISTER_RATE_LIMIT.maxRequests,
+    REGISTER_RATE_LIMIT.windowSeconds
+  );
+
+  if (!ipAllowed) {
+    const retryAfterMinutes = Math.ceil(REGISTER_RATE_LIMIT.windowSeconds / 60);
     return NextResponse.json(
       { error: 'Demasiadas solicitudes de registro. Intenta nuevamente más tarde.' },
       {
         status: 429,
-        headers: { 'Retry-After': String(retryAfterSecs) },
+        headers: {
+          'Retry-After': String(REGISTER_RATE_LIMIT.windowSeconds),
+          'X-RateLimit-Limit': String(REGISTER_RATE_LIMIT.maxRequests),
+        },
       }
     );
   }

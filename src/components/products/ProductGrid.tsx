@@ -9,7 +9,7 @@ interface ProductGridProps {
 export function ProductGrid({ products }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <div className="col-span-full flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 p-8 text-center bg-gray-50">
+      <div className="col-span-full flex min-h-[400px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 p-10 text-center bg-gray-50">
         <div className="rounded-full bg-gray-100 p-4 mb-4">
           <PackageSearch className="h-8 w-8 text-gray-400" />
         </div>
@@ -22,9 +22,9 @@ export function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:gap-6 xl:grid-cols-4">
       {products.map((product, idx) => (
-        <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${idx * 30}ms` }}>
+        <div key={product.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${Math.min(idx * 50, 800)}ms` }}>
           <ProductCard product={product} />
         </div>
       ))}

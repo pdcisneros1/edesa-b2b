@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
+import { requireCsrfToken } from '@/lib/csrf';
 import prisma from '@/lib/prisma';
 import { REAL_ORDER_STATUSES } from '@/types/sales';
 import type { Order, OrderItem, OrderStatus } from '@/types/sales';
@@ -11,7 +12,7 @@ function prismaOrderToLocal(
   dbOrder: {
     id: string;
     orderNumber: string;
-    customerId: string | null;
+    userId: string;
     customerName: string;
     customerEmail: string;
     customerPhone: string | null;
@@ -58,7 +59,7 @@ function prismaOrderToLocal(
   return {
     id: dbOrder.id,
     orderNumber: dbOrder.orderNumber,
-    customerId: dbOrder.customerId ?? 'guest',
+    customerId: dbOrder.userId, // B2B: userId IS customerId
     customerName: dbOrder.customerName,
     customerEmail: dbOrder.customerEmail,
     customerPhone: dbOrder.customerPhone ?? undefined,
@@ -113,6 +114,10 @@ export async function PUT(
 ) {
   const auth = await requireAdmin(request);
   if (!auth.authorized) return auth.response;
+
+  // 🔒 CSRF Protection
+  const csrfError = requireCsrfToken(request);
+  if (csrfError) return csrfError;
 
   const { id } = await params;
   const body = await request.json();

@@ -130,7 +130,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     <div className="bg-gray-50 min-h-screen">
       {/* Page header */}
       <div className="bg-white border-b border-gray-100">
-        <div className="container py-7">
+        <div className="container py-8">
           <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
             Catálogo de Productos
           </h1>
@@ -144,10 +144,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
       </div>
 
-      <div className="container py-6">
-        <div className="flex gap-5">
+      <div className="container py-8">
+        <div className="flex gap-6 lg:gap-8">
           {/* Desktop sidebar */}
-          <aside className="hidden lg:block w-56 flex-shrink-0">
+          <aside className="hidden lg:block w-64 flex-shrink-0">
             <Suspense fallback={null}>
               <ProductFilters categories={categories} brands={brands} />
             </Suspense>
@@ -156,7 +156,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           {/* Main content */}
           <div className="flex-1 min-w-0">
             {/* Toolbar */}
-            <div className="flex items-center justify-between mb-4 gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2.5">
+            <div className="flex items-center justify-between mb-5 gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3">
               <div className="lg:hidden">
                 <Suspense fallback={null}>
                   <ProductFilters categories={categories} brands={brands} isMobile />

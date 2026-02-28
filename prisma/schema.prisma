@@ -10,7 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// USUARIOS (ADMINISTRADORES, STAFF Y CLIENTES FERRETERÍA)
+// USUARIOS (ADMINISTRADORES, STAFF Y CLIENTES FERRETERÍA B2B)
 model User {
   id         String   @id @default(cuid())
   email      String   @unique
@@ -23,6 +23,8 @@ model User {
   phone      String?
   isApproved Boolean  @default(true)  // auto-aprobado; futura: validación manual
   isBlocked  Boolean  @default(false)
+  // Relación con órdenes B2B
+  orders     Order[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -161,7 +163,7 @@ model CartItem {
   @@index([productId])
 }
 
-// CLIENTES
+// CLIENTES (Usado solo para carrito y direcciones - NO para órdenes)
 model Customer {
   id              String    @id @default(cuid())
   firstName       String
@@ -173,7 +175,6 @@ model Customer {
   isBusinessClient Boolean   @default(false)
   passwordHash    String
   addresses       Address[]
-  orders          Order[]
   carts           Cart[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -205,13 +206,13 @@ model Address {
   @@index([customerId])
 }
 
-// ÓRDENES
+// ÓRDENES (B2B - SIEMPRE VINCULADAS A USER)
 model Order {
   id              String      @id @default(cuid())
   orderNumber     String      @unique
-  // FK opcional: guest checkout no requiere cuenta de cliente
-  customerId      String?
-  customer        Customer?   @relation(fields: [customerId], references: [id])
+  // FK obligatorio a User (B2B cerrado)
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Restrict)
   items           OrderItem[]
 
   // Montos
@@ -246,7 +247,7 @@ model Order {
   updatedAt       DateTime    @updatedAt
 
   @@index([orderNumber])
-  @@index([customerId])
+  @@index([userId])
   @@index([status])
   @@index([createdAt])
 }

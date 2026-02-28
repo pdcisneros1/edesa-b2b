@@ -11,7 +11,7 @@ function prismaOrderToLocal(
   dbOrder: {
     id: string;
     orderNumber: string;
-    customerId: string | null;
+    userId: string;
     customerName: string;
     customerEmail: string;
     customerPhone: string | null;
@@ -58,7 +58,7 @@ function prismaOrderToLocal(
   return {
     id: dbOrder.id,
     orderNumber: dbOrder.orderNumber,
-    customerId: dbOrder.customerId ?? 'guest',
+    customerId: dbOrder.userId, // B2B: userId IS customerId
     customerName: dbOrder.customerName,
     customerEmail: dbOrder.customerEmail,
     customerPhone: dbOrder.customerPhone ?? undefined,
@@ -98,22 +98,49 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ orders });
 }
 
-// POST /api/orders — crea un pedido
+// POST /api/orders — crea un pedido (B2B cerrado: solo usuarios autenticados)
 export async function POST(request: NextRequest) {
-  // Rate limiting por IP para prevenir abuso del checkout
+  // 🔒 1. AUTENTICACIÓN OBLIGATORIA (B2B cerrado)
+  const auth = await requireAuth(request);
+  if (!auth.authenticated || !auth.session) {
+    return NextResponse.json(
+      { error: 'Debes iniciar sesión para realizar un pedido' },
+      { status: 401 }
+    );
+  }
+
+  // 🔒 2. CSRF PROTECTION
+  const { validateCsrfToken } = await import('@/lib/csrf');
+  if (!validateCsrfToken(request)) {
+    return NextResponse.json(
+      { error: 'Token CSRF inválido. Recarga la página e intenta nuevamente.' },
+      { status: 403 }
+    );
+  }
+
+  // 🔒 3. RATE LIMITING
   const ip = getClientIp(request);
-  const ipCheck = checkRateLimit(`checkout:ip:${ip}`, CHECKOUT_RATE_LIMIT);
-  if (ipCheck.limited) {
-    const retryAfterSecs = Math.ceil(ipCheck.retryAfterMs / 1000);
+  const ipAllowed = await checkRateLimit(
+    `checkout:ip:${ip}`,
+    CHECKOUT_RATE_LIMIT.maxRequests,
+    CHECKOUT_RATE_LIMIT.windowSeconds
+  );
+
+  if (!ipAllowed) {
+    const retryAfterMinutes = Math.ceil(CHECKOUT_RATE_LIMIT.windowSeconds / 60);
     return NextResponse.json(
       { error: 'Demasiadas solicitudes. Intenta nuevamente más tarde.' },
       {
         status: 429,
-        headers: { 'Retry-After': String(retryAfterSecs) },
+        headers: {
+          'Retry-After': String(CHECKOUT_RATE_LIMIT.windowSeconds),
+          'X-RateLimit-Limit': String(CHECKOUT_RATE_LIMIT.maxRequests),
+        },
       }
     );
   }
 
+  // 4️⃣ LÓGICA DE NEGOCIO
   try {
     const body = await request.json();
     console.log('📦 Pedido recibido:', {
@@ -189,8 +216,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Las notas no pueden exceder 500 caracteres' }, { status: 400 });
     }
 
-    // Obtener sesión del usuario autenticado (opcional — guest checkout permitido)
-    const { session } = await requireAuth(request);
+    // Usuario autenticado (ya validado arriba en auth)
+    const authenticatedUser = auth.session; // Tipo: SessionPayload con userId
 
     const selectedMethod = SHIPPING_METHODS.find((m) => m.id === shippingMethod);
     const shippingCost = selectedMethod?.price ?? 5;
@@ -258,13 +285,11 @@ export async function POST(request: NextRequest) {
       const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
       const total = Math.round((subtotal + shippingCost + tax) * 100) / 100;
 
-      // Crear pedido con todos los items
-      // NOTA: customerId se deja como null porque session.userId es de la tabla User,
-      // no de Customer. Los datos del cliente se guardan en los campos snapshot.
+      // Crear pedido vinculado al usuario autenticado (B2B cerrado)
       const created = await tx.order.create({
         data: {
           orderNumber,
-          customerId: null,
+          userId: authenticatedUser.userId, // ✅ Vinculado a User
           customerName,
           customerEmail: customerInfo.email,
           customerPhone: customerInfo.phone ?? null,

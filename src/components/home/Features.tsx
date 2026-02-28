@@ -33,7 +33,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="bg-white border-b border-gray-100">
+    <section className="bg-white border-b border-gray-100 py-1">
       <div className="container">
         <div className="grid grid-cols-2 divide-x divide-y md:divide-y-0 md:grid-cols-4 border-x border-gray-100">
           {features.map((feature, index) => {
@@ -48,7 +48,7 @@ export function Features() {
             return (
               <Wrapper key={index} {...(wrapperProps as any)}>
                 <div
-                  className={`flex items-center gap-3 px-5 py-4 h-full ${
+                  className={`flex items-center gap-4 px-6 py-5 h-full animate-fade-in-up opacity-0 delay-${index + 1}00 ${
                     feature.link
                       ? 'hover:bg-gray-50 cursor-pointer transition-colors group'
                       : ''

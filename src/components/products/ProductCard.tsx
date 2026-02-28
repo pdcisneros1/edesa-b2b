@@ -55,29 +55,29 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200 overflow-hidden flex flex-col">
+    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-200 overflow-hidden flex flex-col">
       {/* Image area */}
       <Link href={`/productos/${product.slug}`} className="block relative">
         <div className="relative aspect-square overflow-hidden bg-gray-50">
           {/* Badges */}
-          <div className="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1.5">
+          <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
             {product.isNew && (
-              <span className="inline-flex items-center rounded-md bg-emerald-500 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+              <span className="inline-flex items-center rounded-lg bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
                 Nuevo
               </span>
             )}
             {activePromotion && promotionDiscountPercentage > 0 && (
-              <span className="inline-flex items-center rounded-md bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm animate-pulse">
+              <span className="inline-flex items-center rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm animate-pulse">
                 PROMOCIÓN -{Math.round(promotionDiscountPercentage)}%
               </span>
             )}
             {!activePromotion && hasDiscount && discount > 0 && (
-              <span className="inline-flex items-center rounded-md bg-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+              <span className="inline-flex items-center rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
                 -{discount}%
               </span>
             )}
             {product.wholesalePrice && product.wholesalePrice > 0 && !activePromotion && (
-              <span className="inline-flex items-center rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+              <span className="inline-flex items-center rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
                 Mayorista
               </span>
             )}
@@ -111,7 +111,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {/* Content */}
-      <div className="flex flex-col flex-1 p-4">
+      <div className="flex flex-col flex-1 p-5">
         <Link href={`/productos/${product.slug}`} className="flex-1 block">
           {/* Brand */}
           {product.brand && (

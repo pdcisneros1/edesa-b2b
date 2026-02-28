@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
+import { requireCsrfToken } from '@/lib/csrf';
 import prisma from '@/lib/prisma';
 
 // GET all products
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAdmin(request);
   if (!authResult.authorized) return authResult.response;
+
+  // 🔒 CSRF Protection
+  const csrfError = requireCsrfToken(request);
+  if (csrfError) return csrfError;
 
   try {
     const data = await request.json();

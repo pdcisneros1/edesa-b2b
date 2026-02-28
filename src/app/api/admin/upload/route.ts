@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
+import { requireCsrfToken } from '@/lib/csrf';
 import { uploadToStorage } from '@/lib/supabase-storage';
 import path from 'path';
 
@@ -72,6 +73,10 @@ function sanitizeFilename(filename: string): string {
 export async function POST(request: NextRequest) {
   const authResult = await requireAdmin(request);
   if (!authResult.authorized) return authResult.response;
+
+  // 🔒 CSRF Protection
+  const csrfError = requireCsrfToken(request);
+  if (csrfError) return csrfError;
 
   try {
     const formData = await request.formData();

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { generateCsrfToken, setCsrfCookie, deleteCsrfCookie } from './csrf';
 
 // ─── Validación de secreto JWT al inicio ─────────────────────────────────────
 
@@ -83,6 +84,7 @@ export async function createSession(userId: string) {
   const token = await encrypt(session);
   const cookieStore = await cookies();
 
+  // Establecer cookie de sesión JWT
   cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -90,6 +92,10 @@ export async function createSession(userId: string) {
     sameSite: 'lax',
     path: '/',
   });
+
+  // 🔒 CSRF Protection: Generar y establecer token CSRF
+  const csrfToken = generateCsrfToken();
+  await setCsrfCookie(csrfToken, expiresAt);
 }
 
 /**
@@ -121,6 +127,9 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function deleteSession() {
   const cookieStore = await cookies();
   cookieStore.delete('session');
+
+  // 🔒 CSRF Protection: Eliminar también el token CSRF
+  await deleteCsrfCookie();
 }
 
 export async function isAuthenticated(): Promise<boolean> {

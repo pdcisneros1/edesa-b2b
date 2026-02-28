@@ -4,20 +4,26 @@ import { checkRateLimit, resetRateLimit, getClientIp, LOGIN_RATE_LIMIT } from '@
 
 export async function POST(request: NextRequest) {
   try {
-    // Extraer IP para rate limiting
+    // 🔒 RATE LIMITING: Extraer IP del cliente
     const ip = getClientIp(request);
 
-    // Verificar rate limit por IP
-    const ipCheck = checkRateLimit(`login:ip:${ip}`, LOGIN_RATE_LIMIT);
-    if (ipCheck.limited) {
-      const retryAfterSecs = Math.ceil(ipCheck.retryAfterMs / 1000);
+    // 🔒 RATE LIMITING: Verificar límite por IP (5 intentos en 15 minutos)
+    const ipAllowed = await checkRateLimit(
+      `login:ip:${ip}`,
+      LOGIN_RATE_LIMIT.maxRequests,
+      LOGIN_RATE_LIMIT.windowSeconds
+    );
+
+    if (!ipAllowed) {
+      const retryAfterMinutes = Math.ceil(LOGIN_RATE_LIMIT.windowSeconds / 60);
       return NextResponse.json(
         { error: 'Demasiados intentos fallidos. Intenta nuevamente más tarde.' },
         {
           status: 429,
           headers: {
-            'Retry-After': String(retryAfterSecs),
-            'X-RateLimit-Reset': String(Date.now() + ipCheck.retryAfterMs),
+            'Retry-After': String(retryAfterMinutes * 60),
+            'X-RateLimit-Limit': String(LOGIN_RATE_LIMIT.maxRequests),
+            'X-RateLimit-Window': String(LOGIN_RATE_LIMIT.windowSeconds),
           },
         }
       );
@@ -34,16 +40,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar rate limit adicional por email (previene ataques dirigidos a una cuenta específica)
-    const emailCheck = checkRateLimit(`login:email:${email}`, LOGIN_RATE_LIMIT);
-    if (emailCheck.limited) {
-      const retryAfterSecs = Math.ceil(emailCheck.retryAfterMs / 1000);
+    // 🔒 RATE LIMITING: Verificar límite adicional por email
+    // Previene ataques dirigidos a una cuenta específica
+    const emailAllowed = await checkRateLimit(
+      `login:email:${email}`,
+      LOGIN_RATE_LIMIT.maxRequests,
+      LOGIN_RATE_LIMIT.windowSeconds
+    );
+
+    if (!emailAllowed) {
       return NextResponse.json(
         { error: 'Demasiados intentos fallidos. Intenta nuevamente más tarde.' },
-        {
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSecs) },
-        }
+        { status: 429 }
       );
     }
 
@@ -57,9 +65,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Login exitoso: limpiar contadores de rate limit
-    resetRateLimit(`login:ip:${ip}`);
-    resetRateLimit(`login:email:${email}`);
+    // ✅ Login exitoso: limpiar contadores de rate limit
+    await resetRateLimit(`login:ip:${ip}`);
+    await resetRateLimit(`login:email:${email}`);
 
     await createSession(result.id);
 

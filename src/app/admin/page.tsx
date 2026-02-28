@@ -37,7 +37,7 @@ export default async function AdminDashboardPage() {
     return {
       id: dbOrder.id,
       orderNumber: dbOrder.orderNumber,
-      customerId: dbOrder.customerId ?? 'guest',
+      customerId: dbOrder.userId, // B2B: userId IS customerId
       customerName: dbOrder.customerName,
       customerEmail: dbOrder.customerEmail,
       customerPhone: dbOrder.customerPhone ?? undefined,
