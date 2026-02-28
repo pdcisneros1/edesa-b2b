@@ -67,6 +67,15 @@ export async function POST(request: NextRequest) {
     // Auto-login tras registro
     await createSession(user.id);
 
+    // 📧 Enviar email de bienvenida (no bloquear la respuesta)
+    try {
+      const { sendWelcomeEmail } = await import('@/lib/email');
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (emailError) {
+      console.error('❌ Error al enviar email de bienvenida:', emailError);
+      // No fallar el registro si el email falla
+    }
+
     return NextResponse.json(
       { success: true, message: 'Registro exitoso' },
       { status: 201 }

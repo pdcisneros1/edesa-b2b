@@ -327,6 +327,24 @@ export async function POST(request: NextRequest) {
     });
 
     const order = prismaOrderToLocal(dbOrder);
+
+    // 📧 Enviar email de confirmación de pedido (no bloquear la respuesta)
+    try {
+      const { sendOrderConfirmationEmail } = await import('@/lib/email');
+      await sendOrderConfirmationEmail(
+        order.customerEmail,
+        {
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          total: order.total,
+          items: order.items,
+        }
+      );
+    } catch (emailError) {
+      console.error('❌ Error al enviar email de confirmación:', emailError);
+      // No fallar el pedido si el email falla
+    }
+
     return NextResponse.json({ order }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error al procesar el pedido';

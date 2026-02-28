@@ -140,5 +140,30 @@ export async function PUT(
     include: { items: true },
   });
 
-  return NextResponse.json({ order: prismaOrderToLocal(dbOrder) });
+  const order = prismaOrderToLocal(dbOrder);
+
+  // 📧 Enviar email de cambio de estado (no bloquear la respuesta)
+  try {
+    const { sendOrderStatusEmail } = await import('@/lib/email');
+    const statusMessages: Record<string, string> = {
+      pendiente_pago: 'Tu pedido está pendiente de confirmación de pago.',
+      confirmado: '¡Tu pedido ha sido confirmado! Comenzaremos a prepararlo pronto.',
+      en_preparacion: 'Estamos preparando tu pedido con cuidado.',
+      enviado: '¡Tu pedido está en camino! Recibirás el tracking pronto.',
+      entregado: '¡Tu pedido ha sido entregado! Gracias por tu compra.',
+      cancelado: 'Tu pedido ha sido cancelado. Contáctanos si tienes dudas.',
+    };
+
+    await sendOrderStatusEmail(order.customerEmail, {
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      status: order.status,
+      statusMessage: statusMessages[status] || 'El estado de tu pedido ha cambiado.',
+    });
+  } catch (emailError) {
+    console.error('❌ Error al enviar email de cambio de estado:', emailError);
+    // No fallar la actualización si el email falla
+  }
+
+  return NextResponse.json({ order });
 }
