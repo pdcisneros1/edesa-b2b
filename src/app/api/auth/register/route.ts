@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     // 📧 Enviar email de bienvenida (no bloquear la respuesta)
     try {
       const { sendWelcomeEmail } = await import('@/lib/email');
-      await sendWelcomeEmail(user.email, user.name);
+      await sendWelcomeEmail(user.email, user.name || 'Usuario');
     } catch (emailError) {
       console.error('❌ Error al enviar email de bienvenida:', emailError);
       // No fallar el registro si el email falla

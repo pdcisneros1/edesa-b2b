@@ -44,12 +44,12 @@ export function OrderStatusEmail({
 }: OrderStatusEmailProps) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://edesa-ventas.vercel.app';
   const statusColor = STATUS_COLORS[status] || '#6b7280';
-  const statusLabel = STATUS_LABELS[status] || status;
+  const statusText = STATUS_LABELS[status] || status;
 
   return (
     <Html>
       <Head />
-      <Preview>Actualización de Pedido {orderNumber} - {statusLabel}</Preview>
+      <Preview>Actualización de Pedido {orderNumber} - {statusText}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Actualización de Pedido</Heading>
@@ -61,10 +61,10 @@ export function OrderStatusEmail({
           </Text>
 
           <Section style={{ ...statusBox, borderColor: statusColor }}>
-            <Text style={{ ...statusLabel, color: statusColor }}>
+            <Text style={{ ...statusLabelStyle, color: statusColor }}>
               Estado: <strong>{STATUS_LABELS[status] || status}</strong>
             </Text>
-            <Text style={statusMessage}>
+            <Text style={statusMessageStyle}>
               {statusMessage}
             </Text>
           </Section>
@@ -126,14 +126,14 @@ const statusBox = {
   margin: '24px 40px',
 };
 
-const statusLabel = {
+const statusLabelStyle = {
   fontSize: '18px',
   fontWeight: 'bold',
   margin: '0 0 8px 0',
   textAlign: 'center' as const,
 };
 
-const statusMessage = {
+const statusMessageStyle = {
   fontSize: '14px',
   color: '#666',
   margin: '8px 0 0 0',

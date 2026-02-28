@@ -61,7 +61,7 @@ export async function sendEmail(options: SendEmailOptions) {
 
   try {
     // Renderizar componente React a HTML
-    const html = render(options.react);
+    const html = await render(options.react);
 
     // Enviar email
     const { data, error } = await resend.emails.send({

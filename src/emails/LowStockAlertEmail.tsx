@@ -28,14 +28,14 @@ export function LowStockAlertEmail({ products }: LowStockAlertEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>⚠️ Alerta de Stock Bajo - {products.length} productos requieren atención</Preview>
+      <Preview>⚠️ Alerta de Stock Bajo - {String(products.length)} productos requieren atención</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>⚠️ Alerta de Stock Bajo</Heading>
 
           <Section style={alertBox}>
             <Text style={alertText}>
-              {products.length} producto{products.length > 1 ? 's' : ''} con stock bajo
+              {String(products.length)} producto{products.length > 1 ? 's' : ''} con stock bajo
             </Text>
           </Section>
 
@@ -74,11 +74,11 @@ export function LowStockAlertEmail({ products }: LowStockAlertEmailProps) {
                     color: product.stock === 0 ? '#dc2626' : product.stock < 5 ? '#f59e0b' : '#333',
                     fontWeight: 'bold',
                   }}>
-                    {product.stock}
+                    {String(product.stock)}
                   </Text>
                 </Column>
                 <Column style={{ width: '12.5%', padding: '8px', textAlign: 'center' }}>
-                  <Text style={productTableCellText}>{product.minStock || 10}</Text>
+                  <Text style={productTableCellText}>{String(product.minStock || 10)}</Text>
                 </Column>
               </Row>
             ))}

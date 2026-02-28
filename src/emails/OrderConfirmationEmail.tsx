@@ -49,7 +49,7 @@ export function OrderConfirmationEmail({
           </Text>
 
           <Section style={orderBox}>
-            <Text style={orderNumber}>
+            <Text style={orderNumberStyle}>
               <strong>Pedido:</strong> {orderNumber}
             </Text>
           </Section>
@@ -166,7 +166,7 @@ const orderBox = {
   margin: '24px 40px',
 };
 
-const orderNumber = {
+const orderNumberStyle = {
   color: '#333',
   fontSize: '18px',
   margin: '0',
