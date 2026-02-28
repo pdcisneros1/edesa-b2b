@@ -3,10 +3,17 @@
  * SERVICIO DE EMAILS TRANSACCIONALES
  * ============================================================================
  *
- * Sistema de envío de emails usando Resend + React Email
+ * Sistema de envío de emails usando Gmail SMTP o Resend + React Email
  *
- * Configuración:
- * - RESEND_API_KEY en .env (obtener de https://resend.com/api-keys)
+ * Configuración Gmail SMTP:
+ * - SMTP_HOST=smtp.gmail.com
+ * - SMTP_PORT=587
+ * - SMTP_USER=tu-email@gmail.com
+ * - SMTP_PASS=contraseña-de-aplicación
+ *
+ * Configuración Resend (alternativa):
+ * - EMAIL_PROVIDER=resend
+ * - RESEND_API_KEY=tu-api-key
  *
  * Características:
  * - Templates hermosos con React Email
@@ -19,13 +26,26 @@
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import type { ReactElement } from 'react';
-
-// Inicializar cliente Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+import nodemailer from 'nodemailer';
 
 // Configuración
+const EMAIL_PROVIDER = process.env.EMAIL_PROVIDER || 'gmail'; // 'gmail' o 'resend'
 const FROM_EMAIL = process.env.EMAIL_FROM || 'EDESA VENTAS <pedidos@edesaventas.ec>';
 const COMPANY_NAME = process.env.NEXT_PUBLIC_COMPANY_NAME || 'EDESA VENTAS';
+
+// Inicializar cliente Resend (solo si se usa)
+const resend = EMAIL_PROVIDER === 'resend' ? new Resend(process.env.RESEND_API_KEY) : null;
+
+// Configurar transporter de Gmail
+const gmailTransporter = EMAIL_PROVIDER === 'gmail' ? nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+}) : null;
 
 /**
  * Opciones para envío de email
@@ -43,13 +63,13 @@ interface SendEmailOptions {
 }
 
 /**
- * Envía un email usando Resend
+ * Envía un email usando Gmail SMTP o Resend
  */
 export async function sendEmail(options: SendEmailOptions) {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
-  // En desarrollo, solo mostrar log (no enviar email real)
-  if (isDevelopment && !process.env.RESEND_API_KEY) {
+  // En desarrollo sin configuración, solo mostrar log
+  if (isDevelopment && !process.env.SMTP_USER && !process.env.RESEND_API_KEY) {
     console.log('📧 [DEV MODE] Email que se enviaría:', {
       from: FROM_EMAIL,
       to: options.to,
@@ -63,24 +83,47 @@ export async function sendEmail(options: SendEmailOptions) {
     // Renderizar componente React a HTML
     const html = await render(options.react);
 
-    // Enviar email
-    const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: options.to,
-      subject: options.subject,
-      html,
-      attachments: options.attachments,
-      cc: options.cc,
-      bcc: options.bcc,
-    });
+    // Usar Gmail SMTP
+    if (EMAIL_PROVIDER === 'gmail' && gmailTransporter) {
+      const info = await gmailTransporter.sendMail({
+        from: FROM_EMAIL,
+        to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+        subject: options.subject,
+        html,
+        cc: options.cc,
+        bcc: options.bcc,
+        attachments: options.attachments?.map(att => ({
+          filename: att.filename,
+          content: att.content,
+        })),
+      });
 
-    if (error) {
-      console.error('❌ Error al enviar email:', error);
-      throw new Error(`Error al enviar email: ${error.message}`);
+      console.log('✅ Email enviado vía Gmail:', info.messageId);
+      return { success: true, id: info.messageId };
     }
 
-    console.log('✅ Email enviado:', data?.id);
-    return { success: true, id: data?.id };
+    // Usar Resend (alternativa)
+    if (EMAIL_PROVIDER === 'resend' && resend) {
+      const { data, error } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: options.to,
+        subject: options.subject,
+        html,
+        attachments: options.attachments,
+        cc: options.cc,
+        bcc: options.bcc,
+      });
+
+      if (error) {
+        console.error('❌ Error al enviar email:', error);
+        throw new Error(`Error al enviar email: ${error.message}`);
+      }
+
+      console.log('✅ Email enviado vía Resend:', data?.id);
+      return { success: true, id: data?.id };
+    }
+
+    throw new Error('No se configuró ningún proveedor de email válido');
   } catch (error) {
     console.error('❌ Error al enviar email:', error);
     throw error;

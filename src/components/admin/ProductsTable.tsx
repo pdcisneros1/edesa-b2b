@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Product } from '@/types/product';
@@ -42,6 +42,11 @@ export function ProductsTable({ products: initialProducts, showLowStockFilter }:
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [search, setSearch] = useState('');
+
+  // Sincronizar estado local cuando cambien los productos del servidor
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
 
   const filtered = search.trim()
     ? products.filter((p) => {
