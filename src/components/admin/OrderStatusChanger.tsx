@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { REAL_ORDER_STATUSES } from '@/types/sales';
 import type { OrderStatus } from '@/types/sales';
+import { useCsrfFetch } from '@/hooks/useCsrfFetch';
 
 interface OrderStatusChangerProps {
   orderId: string;
@@ -21,6 +22,7 @@ interface OrderStatusChangerProps {
 
 export function OrderStatusChanger({ orderId, currentStatus }: OrderStatusChangerProps) {
   const router = useRouter();
+  const { csrfFetch } = useCsrfFetch();
   const [status, setStatus] = useState<OrderStatus>(
     (REAL_ORDER_STATUSES.find((s) => s.value === currentStatus)?.value) ?? 'pendiente_pago'
   );
@@ -32,7 +34,7 @@ export function OrderStatusChanger({ orderId, currentStatus }: OrderStatusChange
     if (!hasChanged) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
+      const res = await csrfFetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
