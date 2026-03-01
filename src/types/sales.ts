@@ -61,6 +61,12 @@ export interface SalesMetrics {
   averageOrderValue: number;
   topSellingProducts: ProductSales[];
   salesByCategory: CategorySales[];
+  // Nuevos KPIs
+  topCustomers: CustomerSales[];
+  periodComparison?: PeriodComparison;
+  salesForecast?: SalesForecast;
+  conversionRate?: number;
+  cartAbandonmentRate?: number;
 }
 
 export interface ProductSales {
@@ -137,3 +143,71 @@ export const REAL_ORDER_STATUSES: { value: OrderStatus; label: string }[] = [
   { value: 'entregado', label: 'Entregado' },
   { value: 'cancelado', label: 'Cancelado' },
 ];
+
+// ============================================================================
+// NUEVOS TIPOS PARA KPIs AVANZADOS
+// ============================================================================
+
+/**
+ * Ventas por cliente (Top clientes)
+ */
+export interface CustomerSales {
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customerCompany?: string;
+  totalOrders: number;
+  totalRevenue: number;
+  totalProfit: number;
+  averageOrderValue: number;
+  lastOrderDate: Date | string;
+  frequency: 'high' | 'medium' | 'low'; // alta/media/baja frecuencia
+}
+
+/**
+ * Comparación de períodos (mes actual vs anterior, año vs año)
+ */
+export interface PeriodComparison {
+  current: {
+    period: string; // "Feb 2026"
+    revenue: number;
+    orders: number;
+    profit: number;
+  };
+  previous: {
+    period: string; // "Jan 2026"
+    revenue: number;
+    orders: number;
+    profit: number;
+  };
+  growth: {
+    revenueGrowth: number; // % de crecimiento
+    ordersGrowth: number;
+    profitGrowth: number;
+  };
+}
+
+/**
+ * Proyección de ventas (predicción basada en tendencia)
+ */
+export interface SalesForecast {
+  nextPeriod: {
+    period: string; // "Mar 2026"
+    predictedRevenue: number;
+    predictedOrders: number;
+    confidence: 'high' | 'medium' | 'low';
+  };
+  trend: 'increasing' | 'stable' | 'decreasing';
+  trendPercentage: number; // % de tendencia mensual promedio
+}
+
+/**
+ * Datos de gráficos de tendencias
+ */
+export interface ChartDataPoint {
+  date: string; // "2026-02-01" o "Feb 2026"
+  revenue: number;
+  orders: number;
+  profit: number;
+  units: number;
+}
