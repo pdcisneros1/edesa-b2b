@@ -57,12 +57,13 @@ export function CategoryPieChart({
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number, name: string) => {
-                if (name === 'Ingresos') {
-                  const percentage = totalRevenue > 0 ? ((value / totalRevenue) * 100).toFixed(1) : 0;
-                  return `${formatPrice(value)} (${percentage}%)`;
-                }
-                return value;
+              formatter={(value: any, name: any) => {
+                if (!value) return '0';
+                const numValue = typeof value === 'number' ? value : parseFloat(value);
+                if (isNaN(numValue)) return '0';
+
+                const percentage = totalRevenue > 0 ? ((numValue / totalRevenue) * 100).toFixed(1) : 0;
+                return `${formatPrice(numValue)} (${percentage}%)`;
               }}
               contentStyle={{
                 backgroundColor: '#fff',

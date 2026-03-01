@@ -46,11 +46,14 @@ export function SalesTrendChart({ data, title = 'Tendencia de Ventas' }: SalesTr
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
+              formatter={(value: any, name: any) => {
+                const numValue = typeof value === 'number' ? value : parseFloat(value);
+                if (isNaN(numValue)) return '0';
+
                 if (name === 'Ingresos' || name === 'Ganancias') {
-                  return formatPrice(value);
+                  return formatPrice(numValue);
                 }
-                return value;
+                return numValue;
               }}
               labelStyle={{ color: '#000' }}
               contentStyle={{

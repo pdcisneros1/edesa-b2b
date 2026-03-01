@@ -51,11 +51,14 @@ export function TopProductsBarChart({
               width={120}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
+              formatter={(value: any, name: any) => {
+                const numValue = typeof value === 'number' ? value : parseFloat(value);
+                if (isNaN(numValue)) return '0';
+
                 if (name === 'Ingresos' || name === 'Ganancias') {
-                  return formatPrice(value);
+                  return formatPrice(numValue);
                 }
-                return value;
+                return numValue;
               }}
               labelFormatter={(label) => {
                 const item = chartData.find((d) => d.name === label);
