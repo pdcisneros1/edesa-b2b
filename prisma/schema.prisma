@@ -28,12 +28,18 @@ model User {
   resetTokenExpiry DateTime? // Expiración del token (1 hora)
   // Relación con órdenes B2B
   orders     Order[]
+  // Tracking de conversión
+  lastLoginAt      DateTime? // Última vez que se autenticó
+  sessionCount     Int       @default(0) // Contador de sesiones únicas
+  // Relación con carritos abandonados
+  abandonedCarts   AbandonedCart[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@index([email])
   @@index([role])
   @@index([resetToken])
+  @@index([lastLoginAt])
 }
 
 // CATEGORÍAS
@@ -390,4 +396,46 @@ model PromotionProduct {
 enum DiscountType {
   percentage
   fixed
+}
+
+// ============================================================================
+// TRACKING DE CONVERSIÓN Y ABANDONO DE CARRITO
+// ============================================================================
+
+// CARRITOS ABANDONADOS (para recovery emails y analytics)
+model AbandonedCart {
+  id        String   @id @default(cuid())
+  userId    String?  // Opcional: puede ser guest o autenticado
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Datos del carrito
+  items     Json     // Array de { productId, quantity, price, name }
+  subtotal  Float
+  total     Float
+
+  // Tracking
+  status    AbandonedCartStatus @default(ACTIVE)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  // Email recovery
+  recoveryEmailSent   Boolean   @default(false)
+  recoveryEmailSentAt DateTime?
+  convertedToOrderId  String?   // Si se recuperó, ID de la orden
+
+  // Info adicional para recovery
+  customerEmail String?
+  customerName  String?
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([recoveryEmailSent])
+}
+
+enum AbandonedCartStatus {
+  ACTIVE      // Carrito activo (< 1 hora)
+  ABANDONED   // Carrito abandonado (> 1 hora, < 7 días)
+  RECOVERED   // Convertido en orden
+  EXPIRED     // Muy antiguo (> 7 días)
 }
