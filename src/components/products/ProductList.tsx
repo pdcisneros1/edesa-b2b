@@ -5,7 +5,9 @@ import Image from 'next/image';
 import { formatPrice } from '@/lib/format';
 import { AddToCartButton } from '@/components/products/AddToCartButton';
 import { PriceGate } from '@/components/products/PriceGate';
-import { Package, Tag } from 'lucide-react';
+import { useCompare } from '@/context/CompareContext';
+import { Package, Tag, GitCompare } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -33,6 +35,8 @@ interface ProductListProps {
 }
 
 export function ProductList({ products }: ProductListProps) {
+  const { addProduct, removeProduct, isComparing, canAddMore } = useCompare();
+
   if (products.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -41,6 +45,18 @@ export function ProductList({ products }: ProductListProps) {
       </div>
     );
   }
+
+  const handleCompareToggle = (product: Product, isInComparison: boolean) => {
+    if (isInComparison) {
+      removeProduct(product.id);
+      toast.info('Producto removido de comparación');
+    } else if (canAddMore) {
+      addProduct(product as any);
+      toast.success('Producto agregado a comparación');
+    } else {
+      toast.error('Máximo 4 productos para comparar');
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -60,6 +76,8 @@ export function ProductList({ products }: ProductListProps) {
             finalPrice = displayPrice - promotion.discountValue;
           }
         }
+
+        const isInComparison = isComparing(product.id);
 
         return (
           <div
@@ -146,7 +164,21 @@ export function ProductList({ products }: ProductListProps) {
                       variant="compact"
                     />
 
-                    <AddToCartButton product={product} size="sm" />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCompareToggle(product, isInComparison)}
+                        className={`flex items-center justify-center h-9 w-9 rounded-lg transition-all duration-200 ${
+                          isInComparison
+                            ? 'bg-primary text-white shadow-md'
+                            : 'bg-gray-100 text-gray-600 hover:bg-primary/10 hover:text-primary'
+                        }`}
+                        aria-label={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
+                        title={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
+                      >
+                        <GitCompare className="h-4 w-4" />
+                      </button>
+                      <AddToCartButton product={product} size="sm" />
+                    </div>
                   </div>
                 </div>
               </div>

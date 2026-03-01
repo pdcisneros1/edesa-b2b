@@ -91,6 +91,25 @@ function FilterContent({
         )}
       </div>
 
+      {/* Solo Promociones - PRIMERO para llamar atención */}
+      <div className="p-4 border-b border-gray-100 bg-red-50/30">
+        <h3 className="text-[11px] font-bold text-red-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          Ofertas Especiales
+        </h3>
+        <label className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-red-50 transition-colors">
+          <input
+            type="checkbox"
+            checked={currentOnlyPromotions}
+            onChange={(e) => updateFilter('onlyPromotions', e.target.checked ? 'true' : '')}
+            className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-2 focus:ring-red-500/20 cursor-pointer"
+          />
+          <span className="text-sm text-gray-700 group-hover:text-red-700 transition-colors font-semibold">
+            Solo productos en promoción
+          </span>
+        </label>
+      </div>
+
       {/* Categories */}
       <div className="p-4 border-b border-gray-100">
         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
@@ -162,7 +181,7 @@ function FilterContent({
       )}
 
       {/* Price range */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4">
         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
           Rango de Precio (USD)
         </h3>
@@ -173,24 +192,6 @@ function FilterContent({
           defaultMax={currentMaxPrice}
           onApply={handlePriceApply}
         />
-      </div>
-
-      {/* Solo Promociones */}
-      <div className="p-4">
-        <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-          Ofertas
-        </h3>
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={currentOnlyPromotions}
-            onChange={(e) => updateFilter('onlyPromotions', e.target.checked ? 'true' : '')}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
-          />
-          <span className="text-sm text-gray-700 group-hover:text-primary transition-colors font-medium">
-            Solo productos en promoción
-          </span>
-        </label>
       </div>
     </div>
   );
