@@ -243,6 +243,37 @@ export async function sendLowStockAlert(
 }
 
 /**
+ * Envía email de recuperación de carrito abandonado
+ */
+export async function sendCartRecoveryEmail(
+  to: string,
+  cartData: {
+    customerName: string;
+    items: Array<{
+      productId: string;
+      quantity: number;
+      price: number;
+      name: string;
+      sku?: string;
+    }>;
+    total: number;
+  }
+) {
+  const { CartRecoveryEmail } = await import('@/emails/CartRecoveryEmail');
+
+  const checkoutUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkout`;
+
+  return sendEmail({
+    to,
+    subject: '¡Tu carrito te espera! 🛒',
+    react: CartRecoveryEmail({
+      ...cartData,
+      checkoutUrl,
+    }),
+  });
+}
+
+/**
  * Utilidad para formatear moneda
  */
 export function formatCurrency(amount: number): string {

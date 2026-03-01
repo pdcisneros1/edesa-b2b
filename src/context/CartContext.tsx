@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Cart, CartItem, Product } from '@/types';
+import { trackCart } from '@/lib/cart-abandonment';
+import { useAuth } from '@/context/AuthContext';
 
 interface CartContextType {
   cart: Cart;
@@ -36,6 +38,7 @@ function calculateTotals(items: CartItem[]): { subtotal: number; total: number }
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart>(createEmptyCart());
   const [isInitialized, setIsInitialized] = useState(false);
+  const { user } = useAuth();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -80,6 +83,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // 📊 TRACKING: Sincronizar carrito a DB para analytics de abandono
+  const syncCartToDatabase = async (updatedCart: Cart) => {
+    // Solo trackear si el carrito tiene items
+    if (updatedCart.items.length === 0) return;
+
+    try {
+      await trackCart({
+        userId: user?.id,
+        customerEmail: user?.email,
+        customerName: user?.name,
+        items: updatedCart.items,
+        subtotal: updatedCart.subtotal,
+        total: updatedCart.total,
+      });
+    } catch (error) {
+      // No lanzar error para no romper la UX
+      console.error('Error tracking cart:', error);
+    }
+  };
+
   const addItem = (product: Product, quantity: number) => {
     const productId = product.id;
 
@@ -114,13 +137,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       const { subtotal, total } = calculateTotals(newItems);
 
-      return {
+      const updatedCart = {
         ...prevCart,
         items: newItems,
         subtotal,
         total,
         updatedAt: new Date(),
       };
+
+      // 📊 TRACKING: Sincronizar carrito a DB (no bloqueante)
+      syncCartToDatabase(updatedCart);
+
+      return updatedCart;
     });
   };
 
@@ -129,13 +157,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const newItems = prevCart.items.filter((item) => item.productId !== productId);
       const { subtotal, total } = calculateTotals(newItems);
 
-      return {
+      const updatedCart = {
         ...prevCart,
         items: newItems,
         subtotal,
         total,
         updatedAt: new Date(),
       };
+
+      // 📊 TRACKING: Sincronizar carrito a DB (no bloqueante)
+      syncCartToDatabase(updatedCart);
+
+      return updatedCart;
     });
   };
 
@@ -159,13 +192,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       const { subtotal, total } = calculateTotals(newItems);
 
-      return {
+      const updatedCart = {
         ...prevCart,
         items: newItems,
         subtotal,
         total,
         updatedAt: new Date(),
       };
+
+      // 📊 TRACKING: Sincronizar carrito a DB (no bloqueante)
+      syncCartToDatabase(updatedCart);
+
+      return updatedCart;
     });
   };
 

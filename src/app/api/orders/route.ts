@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import type { Order, OrderItem, OrderStatus } from '@/types/sales';
 import { TAX_RATE, SHIPPING_METHODS } from '@/lib/constants';
 import { checkRateLimit, getClientIp, CHECKOUT_RATE_LIMIT } from '@/lib/rate-limit';
+import { markCartAsConverted } from '@/lib/cart-abandonment';
 
 // Helper: map a Prisma Order (with items) to the local Order type shape
 // This keeps the API response backward-compatible with all consumers.
@@ -327,6 +328,14 @@ export async function POST(request: NextRequest) {
     });
 
     const order = prismaOrderToLocal(dbOrder);
+
+    // 📊 TRACKING: Marcar carrito como convertido (no bloqueante)
+    try {
+      await markCartAsConverted(authenticatedUser.userId, order.id);
+    } catch (trackingError) {
+      console.error('⚠️ Error al marcar carrito como convertido:', trackingError);
+      // No fallar el pedido si el tracking falla
+    }
 
     // 📧 Enviar email de confirmación de pedido con PDF adjunto (no bloquear la respuesta)
     try {
