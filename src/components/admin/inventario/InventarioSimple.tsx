@@ -39,8 +39,8 @@ export function InventarioSimple() {
           description: 'Todos los productos tienen stock suficiente (> 10 unidades)',
         });
       } else {
-        toast.success(`✅ ${data.ordersCreated} órdenes creadas exitosamente`, {
-          description: 'Redirigiendo a la sección de Compras...',
+        toast.success(`✅ Orden ${data.invoiceNumber} creada con ${data.totalProducts} productos`, {
+          description: `Total: $${data.totalAmount.toFixed(2)} - Redirigiendo a Compras...`,
         });
         setTimeout(() => {
           router.push('/admin/purchases');
@@ -81,15 +81,15 @@ export function InventarioSimple() {
               </p>
               <p className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Genera órdenes de compra instantáneamente con cantidad sugerida de <strong>30 unidades</strong></span>
+                <span>Genera <strong>UNA SOLA orden de compra consolidada</strong> con todos los productos</span>
               </p>
               <p className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Prioriza productos críticos (stock en cero) primero</span>
+                <span>Cantidad sugerida: <strong>30 unidades</strong> por producto</span>
               </p>
               <p className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Las órdenes creadas aparecen en la sección <strong>"Compras"</strong> con formato PO-000001, PO-000002, etc.</span>
+                <span>La orden creada aparece en <strong>"Compras"</strong> lista para enviar a fábrica</span>
               </p>
             </div>
           </div>
@@ -102,10 +102,11 @@ export function InventarioSimple() {
         <div className="space-y-4">
           <div className="flex items-start gap-4">
             <div className="flex-1">
-              <h3 className="font-medium mb-1">Crear Órdenes de Compra Automáticamente</h3>
+              <h3 className="font-medium mb-1">Crear Orden de Compra Consolidada</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Haz clic en el botón para analizar todo el inventario y generar órdenes de compra
-                para todos los productos que tengan stock bajo (≤ 10 unidades).
+                Haz clic en el botón para analizar todo el inventario y generar UNA orden de compra
+                consolidada con todos los productos que tengan stock bajo (≤ 10 unidades).
+                Perfecto para enviar a fábrica.
               </p>
               <Button
                 onClick={handleCreateAutomaticOrders}
@@ -137,10 +138,10 @@ export function InventarioSimple() {
           <div className="flex-1">
             <h3 className="font-semibold mb-2 text-blue-900">Instrucciones</h3>
             <ol className="list-decimal list-inside space-y-1.5 text-sm text-blue-800">
-              <li>Haz clic en el botón "Crear Órdenes de Compra"</li>
+              <li>Haz clic en el botón "Crear Orden de Compra"</li>
               <li>El sistema analizará el inventario en segundos</li>
-              <li>Se crearán órdenes automáticamente para productos con stock ≤ 10</li>
-              <li>Serás redirigido a la sección "Compras" para revisar las órdenes creadas</li>
+              <li>Se creará UNA orden consolidada con todos los productos con stock ≤ 10</li>
+              <li>Serás redirigido a "Compras" para revisar y enviar la orden a fábrica</li>
             </ol>
           </div>
         </div>

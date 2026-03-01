@@ -78,54 +78,63 @@ export async function POST(request: NextRequest) {
       select: { invoiceNumber: true },
     });
 
-    let nextNumber = lastPurchase
+    const nextNumber = lastPurchase
       ? parseInt(lastPurchase.invoiceNumber.replace('PO-', '')) + 1
       : 1;
 
-    console.log('💾 Creando órdenes de compra...');
+    console.log('💾 Creando orden de compra consolidada...');
 
-    // Crear todas las órdenes en paralelo para máxima velocidad
-    const orderPromises = productsNeedingReorder.map(async (product) => {
-      const invoiceNumber = `PO-${nextNumber.toString().padStart(6, '0')}`;
+    // Calcular items y total
+    const items = productsNeedingReorder.map((product) => {
       const unitCost = product.costPrice || product.price * 0.6;
       const quantity = product.suggestedQuantity;
       const totalCost = unitCost * quantity;
 
-      nextNumber++;
+      return {
+        productId: product.id,
+        quantity,
+        unitCost,
+        totalCost,
+      };
+    });
 
-      return prisma.purchaseOrder.create({
-        data: {
-          invoiceNumber,
-          supplierId: supplier.id,
-          status: 'PENDING',
-          totalAmount: totalCost,
-          items: {
-            create: {
-              productId: product.id,
-              quantity,
-              unitCost,
-              totalCost,
+    const totalAmount = items.reduce((sum, item) => sum + item.totalCost, 0);
+    const invoiceNumber = `PO-${nextNumber.toString().padStart(6, '0')}`;
+
+    // Crear UNA SOLA orden de compra con TODOS los items
+    const purchaseOrder = await prisma.purchaseOrder.create({
+      data: {
+        invoiceNumber,
+        supplierId: supplier.id,
+        status: 'PENDING',
+        totalAmount,
+        items: {
+          create: items,
+        },
+      },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+                sku: true,
+              },
             },
           },
         },
-        select: {
-          invoiceNumber: true,
-          totalAmount: true,
-        },
-      });
+      },
     });
 
-    // Ejecutar todas las creaciones en paralelo
-    const createdOrders = await Promise.all(orderPromises);
-
-    console.log(`✅ ${createdOrders.length} órdenes creadas exitosamente`);
+    console.log(`✅ Orden consolidada creada: ${invoiceNumber} con ${items.length} productos`);
 
     return NextResponse.json({
       success: true,
-      message: `${createdOrders.length} órdenes de compra creadas exitosamente`,
-      ordersCreated: createdOrders.length,
+      message: `Orden de compra ${invoiceNumber} creada con ${productsNeedingReorder.length} productos`,
+      ordersCreated: 1,
       totalProducts: productsNeedingReorder.length,
-      orders: createdOrders,
+      invoiceNumber: purchaseOrder.invoiceNumber,
+      totalAmount: purchaseOrder.totalAmount,
     });
   } catch (error) {
     console.error('❌ Error al crear órdenes de compra automáticas:', error);
