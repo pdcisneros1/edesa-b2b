@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCredentials, createSession } from '@/lib/auth';
 import { checkRateLimit, resetRateLimit, getClientIp, LOGIN_RATE_LIMIT } from '@/lib/rate-limit';
+import { trackUserSession } from '@/lib/conversion-tracking';
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,6 +71,9 @@ export async function POST(request: NextRequest) {
     await resetRateLimit(`login:email:${email}`);
 
     await createSession(result.id);
+
+    // 📊 TRACKING: Registrar sesión para métricas de conversión
+    await trackUserSession(result.id);
 
     return NextResponse.json(
       { success: true, message: 'Sesión iniciada correctamente' },
