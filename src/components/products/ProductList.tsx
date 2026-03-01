@@ -165,7 +165,7 @@ export function ProductList({ products }: ProductListProps) {
                       >
                         <GitCompare className="h-4 w-4" />
                       </button>
-                      <AddToCartButton product={product} />
+                      <AddToCartButton product={product as any} />
                     </div>
                   </div>
                 </div>
