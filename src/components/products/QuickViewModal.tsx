@@ -45,7 +45,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
   const images = product.images || [];
   const selectedImage = images[selectedImageIndex] || { url: '/images/products/placeholder.jpg', alt: product.name };
   const hasPromotion = product.promotions && product.promotions.length > 0;
-  const promotion = hasPromotion ? product.promotions[0].promotion : null;
+  const promotion = hasPromotion ? product.promotions?.[0].promotion : null;
 
   const displayPrice = product.wholesalePrice && product.wholesalePrice > 0
     ? product.wholesalePrice
