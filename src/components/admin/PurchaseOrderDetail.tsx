@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
 import { formatDate } from '@/lib/utils';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Trash2 } from 'lucide-react';
 
 interface OrderDetailProps {
     order: any; // Using any for simplicity in this generated component, better to use Prisma generated types
@@ -18,6 +18,7 @@ interface OrderDetailProps {
 export function PurchaseOrderDetail({ order }: OrderDetailProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const handleConfirm = async () => {
         if (!confirm('¿Estás seguro de recibir esta mercadería? El stock se actualizará automáticamente.')) {
@@ -40,6 +41,38 @@ export function PurchaseOrderDetail({ order }: OrderDetailProps) {
         }
     };
 
+    const handleDelete = async () => {
+        if (order.status === 'RECEIVED') {
+            toast.error('No se puede eliminar una orden ya recibida');
+            return;
+        }
+
+        if (!confirm(`¿Estás seguro de eliminar la orden ${order.invoiceNumber}? Esta acción no se puede deshacer.`)) {
+            return;
+        }
+
+        setDeleting(true);
+        try {
+            const res = await fetch(`/api/admin/purchases/${order.id}`, {
+                method: 'DELETE',
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                toast.success('Orden eliminada exitosamente');
+                router.push('/admin/purchases');
+            } else {
+                toast.error(data.error || 'Error al eliminar orden');
+            }
+        } catch (error) {
+            console.error('Error al eliminar:', error);
+            toast.error('Error al eliminar orden');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -53,10 +86,26 @@ export function PurchaseOrderDetail({ order }: OrderDetailProps) {
                     </Badge>
 
                     {order.status === 'PENDING' && (
-                        <Button onClick={handleConfirm} disabled={loading} className="bg-green-600 hover:bg-green-700">
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            {loading ? 'Procesando...' : 'Confirmar Recepción'}
-                        </Button>
+                        <div className="flex flex-col gap-3">
+                            <Button
+                                onClick={handleConfirm}
+                                disabled={loading || deleting}
+                                className="bg-green-600 hover:bg-green-700 w-full"
+                            >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                {loading ? 'Procesando...' : 'Confirmar Recepción'}
+                            </Button>
+
+                            <Button
+                                onClick={handleDelete}
+                                disabled={loading || deleting}
+                                variant="destructive"
+                                className="bg-red-600 hover:bg-red-700 w-full"
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                {deleting ? 'Eliminando...' : 'Eliminar Orden'}
+                            </Button>
+                        </div>
                     )}
                 </div>
             </div>
