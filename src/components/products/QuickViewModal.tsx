@@ -47,10 +47,6 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
   const hasPromotion = product.promotions && product.promotions.length > 0;
   const promotion = hasPromotion ? product.promotions?.[0].promotion : null;
 
-  const displayPrice = product.wholesalePrice && product.wholesalePrice > 0
-    ? product.wholesalePrice
-    : product.price;
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -139,9 +135,10 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
             {/* Precio */}
             <div className="mb-6">
               <PriceGate
-                price={displayPrice}
-                originalPrice={hasPromotion ? displayPrice : product.compareAtPrice}
-                promotion={promotion}
+                price={product.price}
+                wholesalePrice={product.wholesalePrice}
+                compareAtPrice={product.compareAtPrice}
+                promotion={promotion ?? undefined}
               />
             </div>
 
