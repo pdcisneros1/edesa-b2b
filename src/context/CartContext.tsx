@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Cart, CartItem, Product } from '@/types';
-import { trackCart } from '@/lib/cart-abandonment';
 import { useAuth } from '@/context/AuthContext';
 
 interface CartContextType {
@@ -38,7 +37,7 @@ function calculateTotals(items: CartItem[]): { subtotal: number; total: number }
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart>(createEmptyCart());
   const [isInitialized, setIsInitialized] = useState(false);
-  const { user } = useAuth();
+  const { session } = useAuth();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -83,25 +82,45 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // 📊 TRACKING: Sincronizar carrito a DB para analytics de abandono
-  const syncCartToDatabase = async (updatedCart: Cart) => {
-    // Solo trackear si el carrito tiene items
-    if (updatedCart.items.length === 0) return;
+  // 📊 TRACKING: Sincronizar carrito a DB cuando cambie
+  useEffect(() => {
+    // Solo trackear si el carrito está inicializado y tiene items
+    if (!isInitialized || cart.items.length === 0) return;
 
-    try {
-      await trackCart({
-        userId: user?.id,
-        customerEmail: user?.email,
-        customerName: user?.name,
-        items: updatedCart.items,
-        subtotal: updatedCart.subtotal,
-        total: updatedCart.total,
-      });
-    } catch (error) {
-      // No lanzar error para no romper la UX
-      console.error('Error tracking cart:', error);
+    // ⚠️ CRÍTICO: Solo trackear si hay sesión con userId o email
+    if (!session?.userId && !session?.email) {
+      console.log('⏳ Esperando sesión de usuario para trackear carrito...');
+      return;
     }
-  };
+
+    const syncToDatabase = async () => {
+      try {
+        const response = await fetch('/api/cart/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: session.userId,
+            customerEmail: session.email,
+            customerName: session.name,
+            items: cart.items,
+            subtotal: cart.subtotal,
+            total: cart.total,
+          }),
+        });
+
+        if (response.ok) {
+          console.log('✅ Carrito sincronizado a BD');
+        } else {
+          const data = await response.json();
+          console.error('❌ Error tracking cart:', data.error);
+        }
+      } catch (error) {
+        console.error('❌ Error tracking cart:', error);
+      }
+    };
+
+    syncToDatabase();
+  }, [cart, isInitialized, session]);
 
   const addItem = (product: Product, quantity: number) => {
     const productId = product.id;
@@ -137,18 +156,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       const { subtotal, total } = calculateTotals(newItems);
 
-      const updatedCart = {
+      return {
         ...prevCart,
         items: newItems,
         subtotal,
         total,
         updatedAt: new Date(),
       };
-
-      // 📊 TRACKING: Sincronizar carrito a DB (no bloqueante)
-      syncCartToDatabase(updatedCart);
-
-      return updatedCart;
     });
   };
 
@@ -157,18 +171,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const newItems = prevCart.items.filter((item) => item.productId !== productId);
       const { subtotal, total } = calculateTotals(newItems);
 
-      const updatedCart = {
+      return {
         ...prevCart,
         items: newItems,
         subtotal,
         total,
         updatedAt: new Date(),
       };
-
-      // 📊 TRACKING: Sincronizar carrito a DB (no bloqueante)
-      syncCartToDatabase(updatedCart);
-
-      return updatedCart;
     });
   };
 
@@ -192,18 +201,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       const { subtotal, total } = calculateTotals(newItems);
 
-      const updatedCart = {
+      return {
         ...prevCart,
         items: newItems,
         subtotal,
         total,
         updatedAt: new Date(),
       };
-
-      // 📊 TRACKING: Sincronizar carrito a DB (no bloqueante)
-      syncCartToDatabase(updatedCart);
-
-      return updatedCart;
     });
   };
 

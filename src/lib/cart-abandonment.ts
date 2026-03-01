@@ -20,12 +20,15 @@ export async function trackCart(params: {
   total: number;
 }): Promise<void> {
   try {
+    console.log('🔍 trackCart llamado con:', { userId: params.userId, email: params.customerEmail, itemsCount: params.items.length });
+
     if (!params.userId && !params.customerEmail) {
-      // No podemos trackear carritos anónimos sin email
+      console.log('⚠️ No hay userId ni email - saliendo');
       return;
     }
 
     // Buscar carrito existente
+    console.log('🔍 Buscando carrito existente...');
     const existingCart = params.userId
       ? await prisma.abandonedCart.findFirst({
           where: {
@@ -35,14 +38,16 @@ export async function trackCart(params: {
         })
       : null;
 
+    console.log('🔍 Carrito existente:', existingCart ? existingCart.id : 'No existe');
+
     const cartData = {
       userId: params.userId,
       items: params.items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
         price: item.price,
-        name: item.productName,
-        sku: item.productSku,
+        name: item.product.name,
+        sku: item.product.sku,
       })),
       subtotal: params.subtotal,
       total: params.total,
@@ -53,20 +58,22 @@ export async function trackCart(params: {
     };
 
     if (existingCart) {
-      // Actualizar carrito existente
+      console.log('🔄 Actualizando carrito existente...');
       await prisma.abandonedCart.update({
         where: { id: existingCart.id },
         data: cartData,
       });
+      console.log('✅ Carrito actualizado');
     } else {
-      // Crear nuevo carrito
-      await prisma.abandonedCart.create({
+      console.log('🔄 Creando nuevo carrito...');
+      const created = await prisma.abandonedCart.create({
         data: cartData,
       });
+      console.log('✅ Carrito creado:', created.id);
     }
   } catch (error) {
-    console.error('Error tracking cart:', error);
-    // No lanzar error para no romper la experiencia
+    console.error('❌ Error tracking cart:', error);
+    throw error; // Lanzar el error para verlo en el endpoint
   }
 }
 

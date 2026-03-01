@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { CartProvider } from "@/context/CartContext";
-import { CheckoutProvider } from "@/context/CheckoutContext";
 import { Toaster } from "@/components/ui/sonner";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 
@@ -80,12 +78,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CartProvider>
-          <CheckoutProvider>
-            {children}
-            <Toaster />
-          </CheckoutProvider>
-        </CartProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

@@ -1,6 +1,8 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AuthProvider } from '@/context/AuthContext';
+import { CartProvider } from '@/context/CartContext';
+import { CheckoutProvider } from '@/context/CheckoutContext';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
@@ -32,11 +34,15 @@ export default async function MainLayout({
 
   return (
     <AuthProvider session={session}>
-      <div className="relative flex min-h-screen flex-col">
-        <Header categories={categories} />
-        <main className="flex-1">{children}</main>
-        <Footer />
-      </div>
+      <CartProvider>
+        <CheckoutProvider>
+          <div className="relative flex min-h-screen flex-col">
+            <Header categories={categories} />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </CheckoutProvider>
+      </CartProvider>
     </AuthProvider>
   );
 }
