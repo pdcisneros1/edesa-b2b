@@ -71,19 +71,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar o crear proveedor genérico
+    console.log('🔍 Buscando proveedor...');
     let supplier = await prisma.supplier.findFirst({
       where: { name: 'Proveedor Genérico' },
     });
 
     if (!supplier) {
-      supplier = await prisma.supplier.create({
-        data: {
-          name: 'Proveedor Genérico',
-          contact: 'N/A',
-          email: 'compras@edesaventas.ec',
-          phone: 'N/A',
-        },
-      });
+      console.log('➕ Creando proveedor genérico...');
+      try {
+        supplier = await prisma.supplier.create({
+          data: {
+            name: 'Proveedor Genérico',
+            contact: 'N/A',
+            email: 'compras@edesaventas.ec',
+            phone: 'N/A',
+          },
+        });
+        console.log('✅ Proveedor creado:', supplier.id);
+      } catch (supplierError) {
+        console.error('❌ Error al crear proveedor:', supplierError);
+        throw supplierError;
+      }
+    } else {
+      console.log('✅ Proveedor encontrado:', supplier.id);
     }
 
     // Obtener el último número de factura
@@ -114,8 +124,16 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = orderItems.reduce((sum, item) => sum + item.totalCost, 0);
 
+    console.log('📝 Creando orden de compra...');
+    console.log('  Invoice:', invoiceNumber);
+    console.log('  Supplier ID:', supplier.id);
+    console.log('  Total amount:', totalAmount);
+    console.log('  Items count:', orderItems.length);
+
     // Crear orden de compra consolidada
-    const purchaseOrder = await prisma.purchaseOrder.create({
+    let purchaseOrder;
+    try {
+      purchaseOrder = await prisma.purchaseOrder.create({
       data: {
         invoiceNumber,
         supplierId: supplier.id,
@@ -138,8 +156,14 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+      console.log(`✅ Orden ${invoiceNumber} creada exitosamente`);
+    } catch (orderError) {
+      console.error('❌ Error al crear orden de compra:',orderError);
+      console.error('Detalles del error:', JSON.stringify(orderError, null, 2));
+      throw orderError;
+    }
 
-    console.log(`✅ Orden ${invoiceNumber} creada con ${orderItems.length} productos`);
+    console.log(`✅ Orden ${invoiceNumber} completada con ${orderItems.length} productos`);
 
     return NextResponse.json({
       success: true,
