@@ -138,7 +138,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                 price={product.price}
                 wholesalePrice={product.wholesalePrice}
                 compareAtPrice={product.compareAtPrice}
-                promotion={promotion ?? undefined}
+                promotion={promotion as any}
               />
             </div>
 
