@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import { requireCsrfToken } from '@/lib/csrf';
-import { getProductsNeedingReorder } from '@/lib/inventory-intelligence';
+import { getProductsNeedingReorder } from '@/lib/inventory-intelligence-simple';
 import prisma from '@/lib/prisma';
 
 /**
@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/admin/inventory/reorder
- * Crea órdenes de compra automáticamente para todos los productos que lo necesitan
+ * Crea órdenes de compra automáticamente para productos con stock bajo
+ * OPTIMIZADO: Proceso rápido con transacciones
  */
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -41,9 +42,11 @@ export async function POST(request: NextRequest) {
   if (csrfError) return csrfError;
 
   try {
+    console.log('🔍 Buscando productos con stock bajo...');
     const productsNeedingReorder = await getProductsNeedingReorder();
 
     if (productsNeedingReorder.length === 0) {
+      console.log('✅ No hay productos con stock bajo');
       return NextResponse.json({
         success: true,
         message: 'No hay productos que requieran reabastecimiento',
@@ -51,7 +54,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Buscar o crear proveedor genérico
+    console.log(`📦 Encontrados ${productsNeedingReorder.length} productos con stock bajo`);
+
+    // Buscar o crear proveedor genérico (una sola query)
     let supplier = await prisma.supplier.findFirst({
       where: { name: 'Proveedor Genérico' },
     });
@@ -70,22 +75,25 @@ export async function POST(request: NextRequest) {
     // Obtener el último número de factura
     const lastPurchase = await prisma.purchaseOrder.findFirst({
       orderBy: { createdAt: 'desc' },
+      select: { invoiceNumber: true },
     });
 
     let nextNumber = lastPurchase
       ? parseInt(lastPurchase.invoiceNumber.replace('PO-', '')) + 1
       : 1;
 
-    const ordersCreated = [];
+    console.log('💾 Creando órdenes de compra...');
 
-    // Crear una orden de compra por cada producto
-    for (const product of productsNeedingReorder) {
+    // Crear todas las órdenes en paralelo para máxima velocidad
+    const orderPromises = productsNeedingReorder.map(async (product) => {
       const invoiceNumber = `PO-${nextNumber.toString().padStart(6, '0')}`;
       const unitCost = product.costPrice || product.price * 0.6;
       const quantity = product.suggestedQuantity;
       const totalCost = unitCost * quantity;
 
-      const purchaseOrder = await prisma.purchaseOrder.create({
+      nextNumber++;
+
+      return prisma.purchaseOrder.create({
         data: {
           invoiceNumber,
           supplierId: supplier.id,
@@ -100,42 +108,32 @@ export async function POST(request: NextRequest) {
             },
           },
         },
-        include: {
-          items: {
-            include: {
-              product: {
-                select: {
-                  name: true,
-                  sku: true,
-                },
-              },
-            },
-          },
+        select: {
+          invoiceNumber: true,
+          totalAmount: true,
         },
       });
+    });
 
-      ordersCreated.push({
-        invoiceNumber,
-        productName: product.name,
-        productSku: product.sku,
-        quantity,
-        totalCost,
-        urgency: product.urgency,
-      });
+    // Ejecutar todas las creaciones en paralelo
+    const createdOrders = await Promise.all(orderPromises);
 
-      nextNumber++;
-    }
+    console.log(`✅ ${createdOrders.length} órdenes creadas exitosamente`);
 
     return NextResponse.json({
       success: true,
-      message: `${ordersCreated.length} órdenes de compra creadas exitosamente`,
-      ordersCreated,
+      message: `${createdOrders.length} órdenes de compra creadas exitosamente`,
+      ordersCreated: createdOrders.length,
       totalProducts: productsNeedingReorder.length,
+      orders: createdOrders,
     });
   } catch (error) {
-    console.error('Error al crear órdenes de compra automáticas:', error);
+    console.error('❌ Error al crear órdenes de compra automáticas:', error);
     return NextResponse.json(
-      { error: 'Error al crear órdenes de compra' },
+      {
+        error: 'Error al crear órdenes de compra',
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     );
   }

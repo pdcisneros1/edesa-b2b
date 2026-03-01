@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { RefreshCw, Zap, TrendingUp } from 'lucide-react';
+import { Zap, TrendingUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCsrfFetch } from '@/hooks/useCsrfFetch';
 
@@ -12,12 +12,11 @@ export function InventarioSimple() {
   const router = useRouter();
   const { csrfFetch } = useCsrfFetch();
   const [isCreatingOrders, setIsCreatingOrders] = useState(false);
-  const [isUpdatingMetrics, setIsUpdatingMetrics] = useState(false);
 
   const handleCreateAutomaticOrders = async () => {
     const confirmed = confirm(
       '¿Crear órdenes de compra automáticamente?\n\n' +
-        'Esto generará órdenes para todos los productos que necesitan reabastecimiento.'
+        'El sistema detectará productos con stock ≤ 10 unidades y creará órdenes de reabastecimiento.'
     );
 
     if (!confirmed) return;
@@ -36,45 +35,24 @@ export function InventarioSimple() {
       const data = await res.json();
 
       if (data.ordersCreated === 0) {
-        toast.info(data.message || 'No hay productos que requieran reabastecimiento');
+        toast.info('✅ No hay productos con stock bajo que requieran reabastecimiento', {
+          description: 'Todos los productos tienen stock suficiente (> 10 unidades)',
+        });
       } else {
-        toast.success(data.message);
-        router.push('/admin/purchases');
+        toast.success(`✅ ${data.ordersCreated} órdenes creadas exitosamente`, {
+          description: 'Redirigiendo a la sección de Compras...',
+        });
+        setTimeout(() => {
+          router.push('/admin/purchases');
+        }, 1500);
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al crear órdenes');
+      toast.error('❌ Error al crear órdenes', {
+        description: error instanceof Error ? error.message : 'Error desconocido',
+      });
     } finally {
       setIsCreatingOrders(false);
-    }
-  };
-
-  const handleUpdateMetrics = async () => {
-    const confirmed = confirm(
-      '¿Actualizar métricas de demanda para todos los productos?\n\n' +
-        'Esto recalculará el promedio de ventas mensuales basado en los últimos 3 meses.\n' +
-        'Puede tardar 10-20 segundos.'
-    );
-
-    if (!confirmed) return;
-
-    setIsUpdatingMetrics(true);
-    try {
-      const res = await csrfFetch('/api/admin/inventory/update-metrics', {
-        method: 'POST',
-      });
-
-      if (!res.ok) {
-        throw new Error('Error al actualizar métricas');
-      }
-
-      const data = await res.json();
-      toast.success(data.message);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al actualizar métricas');
-    } finally {
-      setIsUpdatingMetrics(false);
     }
   };
 
@@ -82,9 +60,9 @@ export function InventarioSimple() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Inventario Inteligente</h1>
+        <h1 className="text-3xl font-bold">Inventario Automático</h1>
         <p className="text-muted-foreground mt-1">
-          Sistema de predicción de demanda y reorden automático
+          Sistema de reabastecimiento automático por stock bajo
         </p>
       </div>
 
@@ -95,87 +73,58 @@ export function InventarioSimple() {
             <TrendingUp className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-semibold mb-2">Sistema de Inventario Inteligente</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Este sistema analiza el historial de ventas de los últimos 3 meses para predecir la demanda
-              y generar órdenes de compra automáticamente cuando los productos alcanzan su punto de reorden.
-            </p>
-            <div className="space-y-2 text-sm">
-              <p className="flex items-center gap-2">
-                <span className="font-medium">✓</span> Cálculo automático de stock de seguridad
+            <h2 className="text-lg font-semibold mb-2">¿Cómo funciona?</h2>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Detecta automáticamente productos con <strong>stock ≤ 10 unidades</strong></span>
               </p>
-              <p className="flex items-center gap-2">
-                <span className="font-medium">✓</span> Predicción de demanda basada en ventas
+              <p className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Genera órdenes de compra instantáneamente con cantidad sugerida de <strong>30 unidades</strong></span>
               </p>
-              <p className="flex items-center gap-2">
-                <span className="font-medium">✓</span> Punto de reorden inteligente
+              <p className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Prioriza productos críticos (stock en cero) primero</span>
               </p>
-              <p className="flex items-center gap-2">
-                <span className="font-medium">✓</span> Órdenes de compra automáticas
+              <p className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Las órdenes creadas aparecen en la sección <strong>"Compras"</strong> con formato PO-000001, PO-000002, etc.</span>
               </p>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Actions */}
+      {/* Action Button */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Acciones Rápidas</h2>
-        <div className="space-y-3">
+        <h2 className="text-lg font-semibold mb-4">Acción Rápida</h2>
+        <div className="space-y-4">
           <div className="flex items-start gap-4">
             <div className="flex-1">
-              <h3 className="font-medium mb-1">1. Actualizar Métricas de Demanda</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Primero debes actualizar las métricas para calcular el promedio de ventas mensuales
-                de todos los productos basándose en el historial de los últimos 3 meses.
+              <h3 className="font-medium mb-1">Crear Órdenes de Compra Automáticamente</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Haz clic en el botón para analizar todo el inventario y generar órdenes de compra
+                para todos los productos que tengan stock bajo (≤ 10 unidades).
               </p>
               <Button
-                onClick={handleUpdateMetrics}
-                disabled={isUpdatingMetrics}
-                variant="outline"
-                className="gap-2"
+                onClick={handleCreateAutomaticOrders}
+                disabled={isCreatingOrders}
+                className="gap-2 bg-green-600 hover:bg-green-700"
+                size="lg"
               >
-                {isUpdatingMetrics ? (
+                {isCreatingOrders ? (
                   <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Actualizando Métricas...
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Procesando...
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="h-4 w-4" />
-                    Actualizar Métricas de Demanda
+                    <Zap className="h-4 w-4" />
+                    Crear Órdenes de Compra
                   </>
                 )}
               </Button>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <div className="flex items-start gap-4">
-              <div className="flex-1">
-                <h3 className="font-medium mb-1">2. Crear Órdenes de Compra Automáticas</h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Una vez actualizadas las métricas, el sistema identificará automáticamente qué productos
-                  necesitan reabastecimiento y generará las órdenes de compra correspondientes.
-                </p>
-                <Button
-                  onClick={handleCreateAutomaticOrders}
-                  disabled={isCreatingOrders}
-                  className="gap-2 bg-green-600 hover:bg-green-700"
-                >
-                  {isCreatingOrders ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Creando Órdenes...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="h-4 w-4" />
-                      Crear Órdenes de Compra Automáticas
-                    </>
-                  )}
-                </Button>
-              </div>
             </div>
           </div>
         </div>
@@ -183,12 +132,18 @@ export function InventarioSimple() {
 
       {/* Instructions */}
       <Card className="p-6 bg-blue-50 border-blue-200">
-        <h3 className="font-semibold mb-2 text-blue-900">💡 Cómo usar el sistema</h3>
-        <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-          <li><strong>Opción 1 (Recomendada):</strong> Actualizar métricas primero para predicción inteligente basada en ventas históricas</li>
-          <li><strong>Opción 2 (Rápida):</strong> Crear órdenes directamente - el sistema detectará automáticamente productos con stock ≤ 10 unidades</li>
-          <li>Las órdenes creadas aparecerán en la sección "Compras" (PO-000001, PO-000002, etc.)</li>
-        </ol>
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-blue-700 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <h3 className="font-semibold mb-2 text-blue-900">Instrucciones</h3>
+            <ol className="list-decimal list-inside space-y-1.5 text-sm text-blue-800">
+              <li>Haz clic en el botón "Crear Órdenes de Compra"</li>
+              <li>El sistema analizará el inventario en segundos</li>
+              <li>Se crearán órdenes automáticamente para productos con stock ≤ 10</li>
+              <li>Serás redirigido a la sección "Compras" para revisar las órdenes creadas</li>
+            </ol>
+          </div>
+        </div>
       </Card>
     </div>
   );
