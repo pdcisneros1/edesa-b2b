@@ -2,13 +2,16 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Eye, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { ShoppingCart, Eye, Lock, GitCompare } from 'lucide-react';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCompare } from '@/context/CompareContext';
 import { toast } from 'sonner';
 import { PriceGate } from './PriceGate';
+import { QuickViewModal } from './QuickViewModal';
 import { calculateDiscount } from '@/lib/format';
 import {
   getActivePromotionForProduct,
@@ -23,7 +26,11 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const { canSeePrices } = useAuth();
+  const { addProduct, removeProduct, isComparing, canAddMore } = useCompare();
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const mainImage = product.images[0]?.url || '/images/products/placeholder.jpg';
+
+  const isInComparison = isComparing(product.id);
 
   // Verificar si tiene promoción activa
   const activePromotion = product.promotions ? getActivePromotionForProduct(product) : null;
@@ -54,11 +61,39 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
+  const handleCompareToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isInComparison) {
+      removeProduct(product.id);
+      toast.info('Producto removido de comparación');
+    } else if (canAddMore) {
+      addProduct(product as any);
+      toast.success('Producto agregado a comparación');
+    } else {
+      toast.error('Máximo 4 productos para comparar');
+    }
+  };
+
   return (
     <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-200 overflow-hidden flex flex-col">
       {/* Image area */}
       <Link href={`/productos/${product.slug}`} className="block relative">
         <div className="relative aspect-square overflow-hidden bg-gray-50">
+          {/* Compare checkbox */}
+          <button
+            onClick={handleCompareToggle}
+            className={`absolute right-3 top-3 z-20 p-2 rounded-lg transition-all duration-200 ${
+              isInComparison
+                ? 'bg-primary text-white shadow-lg scale-110'
+                : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary shadow-md'
+            }`}
+            aria-label={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
+            title={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
+          >
+            <GitCompare className="h-4 w-4" />
+          </button>
+
           {/* Badges */}
           <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
             {product.isNew && (
@@ -102,13 +137,27 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Hover quick-view */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5">
-            <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700 shadow-sm">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsQuickViewOpen(true);
+              }}
+              className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-white hover:text-primary hover:border-primary/40 transition-all"
+            >
               <Eye className="h-3.5 w-3.5" />
-              Ver Detalles
-            </div>
+              Vista Rápida
+            </button>
           </div>
         </div>
       </Link>
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        product={product as any}
+        isOpen={isQuickViewOpen}
+        onClose={() => setIsQuickViewOpen(false)}
+      />
 
       {/* Content */}
       <div className="flex flex-col flex-1 p-5">

@@ -1,8 +1,9 @@
 import { Suspense } from 'react';
-import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductGridSkeleton } from '@/components/shared/LoadingSpinner';
-import { SortSelector } from '@/components/products/SortSelector';
 import { ProductFilters } from '@/components/products/ProductFilters';
+import { ActiveFilterBadges } from '@/components/products/ActiveFilterBadges';
+import { SearchBar } from '@/components/products/SearchBar';
+import { ProductViewContainer } from '@/components/products/ProductViewContainer';
 import prisma from '@/lib/prisma';
 
 export const metadata = {
@@ -28,13 +29,27 @@ interface ProductsPageProps {
     brandId?: string;
     minPrice?: string;
     maxPrice?: string;
+    onlyPromotions?: string;
+    q?: string;
   }>;
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { sort = 'newest', categoryId, brandId, minPrice, maxPrice } = await searchParams;
+  const { sort = 'newest', categoryId, brandId, minPrice, maxPrice, onlyPromotions, q } = await searchParams;
+  const searchQuery = (q || '').trim();
 
   const whereClause: Record<string, unknown> = { isActive: true };
+
+  // Búsqueda por texto
+  if (searchQuery) {
+    whereClause.OR = [
+      { name: { contains: searchQuery, mode: 'insensitive' } },
+      { sku: { contains: searchQuery, mode: 'insensitive' } },
+      { shortDescription: { contains: searchQuery, mode: 'insensitive' } },
+      { description: { contains: searchQuery, mode: 'insensitive' } },
+    ];
+  }
+
   if (categoryId) whereClause.categoryId = categoryId;
   if (brandId) whereClause.brandId = brandId;
   if (minPrice || maxPrice) {
@@ -45,6 +60,34 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   }
 
   const now = new Date();
+
+  // Filtro de promociones activas
+  if (onlyPromotions === 'true') {
+    whereClause.promotions = {
+      some: {
+        promotion: {
+          isActive: true,
+          isManuallyDisabled: false,
+          OR: [
+            {
+              validUntil: null,
+              OR: [
+                { validFrom: null },
+                { validFrom: { lte: now } },
+              ],
+            },
+            {
+              validUntil: { gte: now },
+              OR: [
+                { validFrom: null },
+                { validFrom: { lte: now } },
+              ],
+            },
+          ],
+        },
+      },
+    };
+  }
 
   const [rawProducts, categories, brands] = await Promise.all([
     prisma.product.findMany({
@@ -124,23 +167,30 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     })) ?? [],
   }));
 
-  const hasFilters = categoryId || brandId || minPrice || maxPrice;
+  const hasFilters = categoryId || brandId || minPrice || maxPrice || onlyPromotions || searchQuery;
 
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Page header */}
       <div className="bg-white border-b border-gray-100">
-        <div className="container py-8">
-          <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
-            Catálogo de Productos
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            <span className="tabular-nums font-medium text-gray-700">{products.length}</span>{' '}
-            {products.length === 1 ? 'producto encontrado' : 'productos encontrados'}
-            {hasFilters && (
-              <span className="ml-2 text-primary font-medium">· Filtros activos</span>
-            )}
-          </p>
+        <div className="container py-8 space-y-4">
+          <div>
+            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
+              Catálogo de Productos
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              <span className="tabular-nums font-medium text-gray-700">{products.length}</span>{' '}
+              {products.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+              {hasFilters && (
+                <span className="ml-2 text-primary font-medium">· Filtros activos</span>
+              )}
+            </p>
+          </div>
+
+          {/* Search bar */}
+          <Suspense fallback={null}>
+            <SearchBar />
+          </Suspense>
         </div>
       </div>
 
@@ -155,28 +205,18 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
-            {/* Toolbar */}
-            <div className="flex items-center justify-between mb-5 gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3">
-              <div className="lg:hidden">
-                <Suspense fallback={null}>
-                  <ProductFilters categories={categories} brands={brands} isMobile />
-                </Suspense>
-              </div>
+            {/* Active Filter Badges */}
+            <Suspense fallback={null}>
+              <ActiveFilterBadges categories={categories} brands={brands} />
+            </Suspense>
 
-              <span className="text-sm text-gray-500 hidden lg:block tabular-nums">
-                {products.length} {products.length === 1 ? 'resultado' : 'resultados'}
-              </span>
-
-              <div className="flex items-center gap-2 ml-auto">
-                <span className="text-xs text-gray-400 hidden sm:inline">Ordenar por:</span>
-                <Suspense fallback={null}>
-                  <SortSelector />
-                </Suspense>
-              </div>
-            </div>
-
+            {/* Product View Container (Grid/List + Toolbar) */}
             <Suspense fallback={<ProductGridSkeleton />}>
-              <ProductGrid products={products as any} />
+              <ProductViewContainer
+                products={products as any}
+                categories={categories}
+                brands={brands}
+              />
             </Suspense>
           </div>
         </div>

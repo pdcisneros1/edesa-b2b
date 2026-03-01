@@ -3,6 +3,8 @@ import { Footer } from '@/components/layout/Footer';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { CheckoutProvider } from '@/context/CheckoutContext';
+import { CompareProvider } from '@/context/CompareContext';
+import { CompareFloatingButton } from '@/components/products/CompareFloatingButton';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
@@ -36,11 +38,14 @@ export default async function MainLayout({
     <AuthProvider session={session}>
       <CartProvider>
         <CheckoutProvider>
-          <div className="relative flex min-h-screen flex-col">
-            <Header categories={categories} />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <CompareProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <Header categories={categories} />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <CompareFloatingButton />
+            </div>
+          </CompareProvider>
         </CheckoutProvider>
       </CartProvider>
     </AuthProvider>

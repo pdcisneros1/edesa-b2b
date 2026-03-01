@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import { SlidersHorizontal, X, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { PriceSlider } from '@/components/products/PriceSlider';
 
 interface Category {
   id: string;
@@ -36,13 +37,11 @@ function FilterContent({
 
   const currentCategoryId = searchParams.get('categoryId') || '';
   const currentBrandId = searchParams.get('brandId') || '';
-  const currentMinPrice = searchParams.get('minPrice') || '';
-  const currentMaxPrice = searchParams.get('maxPrice') || '';
+  const currentMinPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
+  const currentMaxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
+  const currentOnlyPromotions = searchParams.get('onlyPromotions') === 'true';
 
-  const [minPrice, setMinPrice] = useState(currentMinPrice);
-  const [maxPrice, setMaxPrice] = useState(currentMaxPrice);
-
-  const hasActiveFilters = currentCategoryId || currentBrandId || currentMinPrice || currentMaxPrice;
+  const hasActiveFilters = currentCategoryId || currentBrandId || currentMinPrice || currentMaxPrice || currentOnlyPromotions;
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -64,11 +63,11 @@ function FilterContent({
     router.push(`/productos${params.toString() ? '?' + params.toString() : ''}`);
   };
 
-  const handlePriceApply = () => {
+  const handlePriceApply = (min: number | null, max: number | null) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (minPrice) params.set('minPrice', minPrice);
+    if (min !== null) params.set('minPrice', min.toString());
     else params.delete('minPrice');
-    if (maxPrice) params.set('maxPrice', maxPrice);
+    if (max !== null) params.set('maxPrice', max.toString());
     else params.delete('maxPrice');
     router.push(`/productos?${params.toString()}`);
   };
@@ -163,44 +162,35 @@ function FilterContent({
       )}
 
       {/* Price range */}
-      <div className="p-4">
+      <div className="p-4 border-b border-gray-100">
         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
           Rango de Precio (USD)
         </h3>
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1.5 block font-medium">Mínimo</label>
-              <input
-                type="number"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                placeholder="$0"
-                min="0"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors bg-gray-50"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1.5 block font-medium">Máximo</label>
-              <input
-                type="number"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                placeholder="$999"
-                min="0"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors bg-gray-50"
-              />
-            </div>
-          </div>
-          <Button
-            onClick={handlePriceApply}
-            variant="outline"
-            size="sm"
-            className="w-full text-xs font-semibold"
-          >
-            Aplicar precio
-          </Button>
-        </div>
+        <PriceSlider
+          min={0}
+          max={1000}
+          defaultMin={currentMinPrice}
+          defaultMax={currentMaxPrice}
+          onApply={handlePriceApply}
+        />
+      </div>
+
+      {/* Solo Promociones */}
+      <div className="p-4">
+        <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+          Ofertas
+        </h3>
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={currentOnlyPromotions}
+            onChange={(e) => updateFilter('onlyPromotions', e.target.checked ? 'true' : '')}
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+          />
+          <span className="text-sm text-gray-700 group-hover:text-primary transition-colors font-medium">
+            Solo productos en promoción
+          </span>
+        </label>
       </div>
     </div>
   );
