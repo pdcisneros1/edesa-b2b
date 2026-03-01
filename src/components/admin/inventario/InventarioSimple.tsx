@@ -34,8 +34,13 @@ export function InventarioSimple() {
       }
 
       const data = await res.json();
-      toast.success(data.message);
-      router.push('/admin/purchases');
+
+      if (data.ordersCreated === 0) {
+        toast.info(data.message || 'No hay productos que requieran reabastecimiento');
+      } else {
+        toast.success(data.message);
+        router.push('/admin/purchases');
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error(error instanceof Error ? error.message : 'Error al crear órdenes');
@@ -180,10 +185,9 @@ export function InventarioSimple() {
       <Card className="p-6 bg-blue-50 border-blue-200">
         <h3 className="font-semibold mb-2 text-blue-900">💡 Cómo usar el sistema</h3>
         <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-          <li>Click en "Actualizar Métricas de Demanda" y espera 10-20 segundos</li>
-          <li>Click en "Crear Órdenes de Compra Automáticas"</li>
-          <li>El sistema generará órdenes para todos los productos que lo necesiten</li>
-          <li>Ve a la sección "Compras" para ver las órdenes creadas (PO-000001, PO-000002, etc.)</li>
+          <li><strong>Opción 1 (Recomendada):</strong> Actualizar métricas primero para predicción inteligente basada en ventas históricas</li>
+          <li><strong>Opción 2 (Rápida):</strong> Crear órdenes directamente - el sistema detectará automáticamente productos con stock ≤ 10 unidades</li>
+          <li>Las órdenes creadas aparecerán en la sección "Compras" (PO-000001, PO-000002, etc.)</li>
         </ol>
       </Card>
     </div>

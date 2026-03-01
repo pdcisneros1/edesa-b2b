@@ -131,6 +131,7 @@ export async function calculateReorderQuantity(productId: string): Promise<numbe
 /**
  * Identifica todos los productos que necesitan reorden
  * Retorna lista de productos donde stock actual <= punto de reorden
+ * O productos con stock crítico (< 10 unidades) incluso sin predicción de demanda
  */
 export async function getProductsNeedingReorder() {
   const products = await prisma.product.findMany({
@@ -157,20 +158,54 @@ export async function getProductsNeedingReorder() {
   });
 
   const productsNeedingReorder = [];
+  const LOW_STOCK_THRESHOLD = 10; // Stock bajo sin necesidad de predicción
 
   for (const product of products) {
-    // Calcular punto de reorden si no existe
-    const reorderPoint = product.reorderPoint || await calculateReorderPoint(product.id);
+    let needsReorder = false;
+    let reorderPoint = product.reorderPoint || 0;
+    let suggestedQuantity = product.reorderQuantity || 0;
+    let urgency: 'critical' | 'high' | 'medium' = 'medium';
 
-    // Si el stock actual es menor o igual al punto de reorden, necesita reabastecimiento
-    if (product.stock <= reorderPoint) {
-      const suggestedQuantity = product.reorderQuantity || await calculateReorderQuantity(product.id);
+    // ESTRATEGIA 1: Basada en predicción de demanda (si hay métricas calculadas)
+    if (product.averageMonthlySales && product.averageMonthlySales > 0) {
+      reorderPoint = product.reorderPoint || await calculateReorderPoint(product.id);
 
+      if (product.stock <= reorderPoint) {
+        needsReorder = true;
+        suggestedQuantity = product.reorderQuantity || await calculateReorderQuantity(product.id);
+
+        if (product.stock === 0) {
+          urgency = 'critical';
+        } else if (product.stock < (product.safetyStock || 0)) {
+          urgency = 'high';
+        } else {
+          urgency = 'medium';
+        }
+      }
+    }
+    // ESTRATEGIA 2: Stock bajo crítico (sin necesidad de historial de ventas)
+    else if (product.stock <= LOW_STOCK_THRESHOLD) {
+      needsReorder = true;
+
+      // Si no hay predicción, usar valores por defecto conservadores
+      reorderPoint = product.reorderPoint || LOW_STOCK_THRESHOLD;
+      suggestedQuantity = product.reorderQuantity || Math.max(30, LOW_STOCK_THRESHOLD * 3);
+
+      if (product.stock === 0) {
+        urgency = 'critical';
+      } else if (product.stock <= 5) {
+        urgency = 'high';
+      } else {
+        urgency = 'medium';
+      }
+    }
+
+    if (needsReorder) {
       productsNeedingReorder.push({
         ...product,
         reorderPoint,
         suggestedQuantity,
-        urgency: product.stock === 0 ? 'critical' : product.stock < (product.safetyStock || 0) ? 'high' : 'medium',
+        urgency,
       });
     }
   }
