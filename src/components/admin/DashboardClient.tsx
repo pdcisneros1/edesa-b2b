@@ -10,8 +10,16 @@ import { Button } from '@/components/ui/button';
 import { SalesOverview } from '@/components/admin/SalesOverview';
 import { TopProductsTable } from '@/components/admin/TopProductsTable';
 import { CategorySalesBreakdown } from '@/components/admin/CategorySalesBreakdown';
+import { TopCustomersTable } from '@/components/admin/TopCustomersTable';
+import { PeriodComparisonCard } from '@/components/admin/PeriodComparisonCard';
+import { SalesForecastCard } from '@/components/admin/SalesForecastCard';
+import { SalesTrendChart } from '@/components/admin/charts/SalesTrendChart';
+import { TopProductsBarChart } from '@/components/admin/charts/TopProductsBarChart';
+import { CategoryPieChart } from '@/components/admin/charts/CategoryPieChart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExportButton } from '@/components/admin/ExportButton';
+import { getChartData } from '@/lib/sales-analytics';
+import { formatPrice } from '@/lib/format';
 
 interface DashboardClientProps {
   products: Product[];
@@ -28,6 +36,9 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
   });
 
   const salesMetrics = calculateSalesMetrics(orders, products, salesFilters);
+
+  // Datos para gráficos de tendencias
+  const chartData = getChartData(orders, salesFilters.period || 'month', 12);
 
   const activeProducts = products.filter((p) => p.isActive).length;
   const featuredProducts = products.filter((p) => p.isFeatured).length;
@@ -167,6 +178,12 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
           <TabsTrigger value="ventas" className="text-sm h-7 px-4 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
             Análisis de Ventas
           </TabsTrigger>
+          <TabsTrigger value="analytics" className="text-sm h-7 px-4 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            Analytics Avanzados
+          </TabsTrigger>
+          <TabsTrigger value="clientes" className="text-sm h-7 px-4 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            Clientes
+          </TabsTrigger>
           <TabsTrigger value="inventario" className="text-sm h-7 px-4 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
             Inventario
           </TabsTrigger>
@@ -181,6 +198,69 @@ export function DashboardClient({ products, categories, brands, orders }: Dashbo
           />
           <TopProductsTable products={salesMetrics.topSellingProducts} />
           <CategorySalesBreakdown categories={salesMetrics.salesByCategory} />
+        </TabsContent>
+
+        {/* Tab de Analytics Avanzados */}
+        <TabsContent value="analytics" className="space-y-5 mt-5">
+          {/* Gráfico de tendencias de ventas */}
+          <SalesTrendChart data={chartData} />
+
+          {/* Fila de KPIs: Comparación y Proyección */}
+          <div className="grid gap-5 md:grid-cols-2">
+            {salesMetrics.periodComparison && (
+              <PeriodComparisonCard comparison={salesMetrics.periodComparison} />
+            )}
+            {salesMetrics.salesForecast && (
+              <SalesForecastCard forecast={salesMetrics.salesForecast} />
+            )}
+          </div>
+
+          {/* Gráficos de productos y categorías */}
+          <div className="grid gap-5 md:grid-cols-2">
+            <TopProductsBarChart products={salesMetrics.topSellingProducts} />
+            <CategoryPieChart categories={salesMetrics.salesByCategory} />
+          </div>
+        </TabsContent>
+
+        {/* Tab de Clientes */}
+        <TabsContent value="clientes" className="space-y-5 mt-5">
+          <TopCustomersTable customers={salesMetrics.topCustomers} limit={20} />
+
+          {/* Estadísticas de clientes */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-5">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Total Clientes
+              </p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">
+                {salesMetrics.topCustomers.length}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Clientes únicos</p>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-5">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Clientes Frecuentes
+              </p>
+              <p className="text-2xl font-bold text-green-600 mt-2">
+                {salesMetrics.topCustomers.filter((c) => c.frequency === 'high').length}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Alta frecuencia de compra</p>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-5">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Revenue por Cliente
+              </p>
+              <p className="text-2xl font-bold text-blue-600 mt-2">
+                {formatPrice(
+                  salesMetrics.totalRevenue /
+                    Math.max(salesMetrics.topCustomers.length, 1)
+                )}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Promedio</p>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Tab de Inventario */}
