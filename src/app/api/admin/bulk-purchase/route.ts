@@ -16,11 +16,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+    console.log('📥 Body recibido:', JSON.stringify(body, null, 2));
+
     const { items } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
+      console.error('❌ Items inválidos:', items);
       return NextResponse.json(
-        { error: 'Debe proporcionar al menos un producto' },
+        { success: false, error: 'Debe proporcionar al menos un producto' },
         { status: 400 }
       );
     }
@@ -30,8 +33,9 @@ export async function POST(request: NextRequest) {
     // Validar que todos los items tengan productId y quantity
     for (const item of items) {
       if (!item.productId || !item.quantity || item.quantity < 1) {
+        console.error('❌ Item inválido:', item);
         return NextResponse.json(
-          { error: 'Datos de productos inválidos' },
+          { success: false, error: `Datos de productos inválidos: ${JSON.stringify(item)}` },
           { status: 400 }
         );
       }
@@ -53,8 +57,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (products.length !== items.length) {
+      console.error(`❌ Solo se encontraron ${products.length} de ${items.length} productos`);
       return NextResponse.json(
-        { error: 'Algunos productos no fueron encontrados' },
+        { success: false, error: `Solo se encontraron ${products.length} de ${items.length} productos` },
         { status: 404 }
       );
     }
@@ -139,10 +144,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('❌ Error al crear orden de compra consolidada:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
       {
+        success: false,
         error: 'Error al crear orden de compra',
-        details: error instanceof Error ? error.message : 'Error desconocido',
+        details: errorMessage,
       },
       { status: 500 }
     );

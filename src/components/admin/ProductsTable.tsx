@@ -152,6 +152,10 @@ export function ProductsTable({ products: initialProducts, showLowStockFilter }:
 
       const data = await res.json();
 
+      if (!data.success) {
+        throw new Error(data.error || 'Error al crear orden');
+      }
+
       toast.success(`✅ Orden ${data.invoiceNumber} creada exitosamente`, {
         description: `${items.length} productos - Total: $${data.totalAmount.toFixed(2)}`,
       });
@@ -164,9 +168,11 @@ export function ProductsTable({ products: initialProducts, showLowStockFilter }:
         router.push('/admin/purchases');
       }, 1500);
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al crear orden de compra', {
-        description: error instanceof Error ? error.message : 'Error desconocido',
+      console.error('❌ Error completo:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('❌ Error al crear orden de compra', {
+        description: errorMessage,
+        duration: 5000,
       });
     } finally {
       setIsCreatingOrder(false);
