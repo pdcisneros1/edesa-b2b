@@ -130,6 +130,9 @@ export function ProductsTable({ products: initialProducts, showLowStockFilter }:
       quantity,
     }));
 
+    console.log('📦 Items a enviar:', items);
+    console.log('📦 Cantidad de items:', items.length);
+
     const confirmed = confirm(
       `¿Crear orden de compra con ${items.length} productos seleccionados?\n\n` +
       `Se generará UNA orden consolidada con todos los productos.`
@@ -139,18 +142,26 @@ export function ProductsTable({ products: initialProducts, showLowStockFilter }:
 
     setIsCreatingOrder(true);
     try {
+      const requestBody = { items };
+      console.log('📤 Enviando request a /api/admin/bulk-purchase');
+      console.log('📤 Body:', JSON.stringify(requestBody, null, 2));
+
       const res = await csrfFetch('/api/admin/bulk-purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Error al crear orden');
-      }
+      console.log('📥 Response status:', res.status);
+      console.log('📥 Response ok:', res.ok);
 
       const data = await res.json();
+      console.log('📥 Response data:', data);
+
+      if (!res.ok || !data.success) {
+        console.error('❌ Error en response:', data);
+        throw new Error(data.error || data.details || 'Error al crear orden');
+      }
 
       if (!data.success) {
         throw new Error(data.error || 'Error al crear orden');
