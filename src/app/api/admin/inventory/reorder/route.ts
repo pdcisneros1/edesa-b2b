@@ -79,22 +79,40 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener el último número de factura
+    console.log('🔢 Generando número de factura...');
     const lastPurchase = await prisma.purchaseOrder.findFirst({
       orderBy: { createdAt: 'desc' },
       select: { invoiceNumber: true },
     });
 
-    const nextNumber = lastPurchase
-      ? parseInt(lastPurchase.invoiceNumber.replace('PO-', '')) + 1
-      : 1;
+    console.log('  Última compra:', lastPurchase?.invoiceNumber || 'Ninguna');
+
+    let nextNumber = 1;
+    if (lastPurchase?.invoiceNumber) {
+      const match = lastPurchase.invoiceNumber.match(/PO-(\d+)/);
+      if (match && match[1]) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+
+    const invoiceNumber = `PO-${nextNumber.toString().padStart(6, '0')}`;
+    console.log('  Número generado:', invoiceNumber);
 
     console.log('💾 Creando orden de compra consolidada...');
 
     // Calcular items y total
+    console.log('💰 Calculando costos de items...');
     const items = productsNeedingReorder.map((product) => {
       const unitCost = product.costPrice || product.price * 0.6;
       const quantity = product.suggestedQuantity;
       const totalCost = unitCost * quantity;
+
+      console.log(`  ${product.sku}: ${quantity}x $${unitCost.toFixed(2)} = $${totalCost.toFixed(2)}`);
+
+      // Validar que los números sean válidos
+      if (isNaN(unitCost) || isNaN(totalCost) || !isFinite(unitCost) || !isFinite(totalCost)) {
+        throw new Error(`Costo inválido para producto ${product.sku}: unitCost=${unitCost}, totalCost=${totalCost}`);
+      }
 
       return {
         productId: product.id,
@@ -105,7 +123,7 @@ export async function POST(request: NextRequest) {
     });
 
     const totalAmount = items.reduce((sum, item) => sum + item.totalCost, 0);
-    const invoiceNumber = `PO-${nextNumber.toString().padStart(6, '0')}`;
+    console.log('  Total general:', `$${totalAmount.toFixed(2)}`);
 
     // Crear UNA SOLA orden de compra con TODOS los items
     const purchaseOrder = await prisma.purchaseOrder.create({
