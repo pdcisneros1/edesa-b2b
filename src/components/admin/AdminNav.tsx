@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Percent,
   TrendingUp,
+  BarChart3,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Promociones', href: '/admin/promociones', icon: Percent },
   { name: 'Categorías', href: '/admin/categorias', icon: FolderTree },
   { name: 'Inventario', href: '/admin/inventario', icon: TrendingUp },
+  { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
   { name: 'Compras', href: '/admin/purchases', icon: FileText },
 ];
 
