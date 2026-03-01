@@ -64,19 +64,6 @@ export function ProductList({ products }: ProductListProps) {
         const image = product.images?.[0];
         const hasPromotion = product.promotions && product.promotions.length > 0;
         const promotion = hasPromotion ? product.promotions?.[0].promotion : null;
-        const displayPrice = product.wholesalePrice && product.wholesalePrice > 0
-          ? product.wholesalePrice
-          : product.price;
-
-        let finalPrice = displayPrice;
-        if (promotion) {
-          if (promotion.discountType === 'PERCENTAGE') {
-            finalPrice = displayPrice * (1 - promotion.discountValue / 100);
-          } else {
-            finalPrice = displayPrice - promotion.discountValue;
-          }
-        }
-
         const isInComparison = isComparing(product.id);
 
         return (
@@ -159,8 +146,9 @@ export function ProductList({ products }: ProductListProps) {
                   {/* Precio y acciones */}
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
                     <PriceGate
-                      price={finalPrice}
-                      originalPrice={hasPromotion ? displayPrice : undefined}
+                      price={product.price}
+                      wholesalePrice={product.wholesalePrice}
+                      promotion={promotion as any}
                       compact
                     />
 
