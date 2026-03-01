@@ -78,24 +78,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Obtener el último número de factura
-    console.log('🔢 Generando número de factura...');
-    const lastPurchase = await prisma.purchaseOrder.findFirst({
-      orderBy: { createdAt: 'desc' },
+    // Obtener TODAS las facturas y calcular el número más alto
+    console.log('🔢 Generando número de factura único...');
+    const allPurchases = await prisma.purchaseOrder.findMany({
       select: { invoiceNumber: true },
     });
 
-    console.log('  Última compra:', lastPurchase?.invoiceNumber || 'Ninguna');
-
     let nextNumber = 1;
-    if (lastPurchase?.invoiceNumber) {
-      const match = lastPurchase.invoiceNumber.match(/PO-(\d+)/);
-      if (match && match[1]) {
-        nextNumber = parseInt(match[1], 10) + 1;
+    if (allPurchases.length > 0) {
+      const numbers = allPurchases
+        .map(p => {
+          const match = p.invoiceNumber.match(/PO-(\d+)/);
+          return match && match[1] ? parseInt(match[1], 10) : 0;
+        })
+        .filter(n => n > 0);
+
+      if (numbers.length > 0) {
+        nextNumber = Math.max(...numbers) + 1;
       }
     }
 
     const invoiceNumber = `PO-${nextNumber.toString().padStart(6, '0')}`;
+    console.log('  Número más alto encontrado:', nextNumber - 1);
     console.log('  Número generado:', invoiceNumber);
 
     console.log('💾 Creando orden de compra consolidada...');
