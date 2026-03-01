@@ -161,7 +161,7 @@ export function ProductList({ products }: ProductListProps) {
                     <PriceGate
                       price={finalPrice}
                       originalPrice={hasPromotion ? displayPrice : undefined}
-                      variant="compact"
+                      compact
                     />
 
                     <div className="flex gap-2">

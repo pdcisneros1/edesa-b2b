@@ -148,7 +148,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                     : product.price;
                   return (
                     <td key={product.id} className="p-3 border-b border-gray-200">
-                      <PriceGate price={displayPrice} variant="compact" />
+                      <PriceGate price={displayPrice} compact />
                     </td>
                   );
                 })}
