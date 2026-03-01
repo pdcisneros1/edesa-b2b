@@ -14,7 +14,7 @@ import { sendCartRecoveryEmail } from '@/lib/email';
  *
  * Configuración en Vercel Cron Jobs:
  * - Función: GET /api/cron/send-recovery-emails
- * - Schedule: 0 */6 * * * (cada 6 horas)
+ * - Schedule: "0 star-slash-6 star star star" (cada 6 horas)
  *
  * SEGURIDAD: Este endpoint debe protegerse con un token secreto o limitarse por IP.
  */

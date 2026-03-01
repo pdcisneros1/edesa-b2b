@@ -12,7 +12,7 @@ import { identifyAbandonedCarts } from '@/lib/cart-abandonment';
  *
  * Configuración en Vercel Cron Jobs:
  * - Función: GET /api/cron/identify-abandoned-carts
- * - Schedule: 0 * * * * (cada hora)
+ * - Schedule: "0 star star star star" (cada hora)
  *
  * SEGURIDAD: Este endpoint debe protegerse con un token secreto o limitarse por IP.
  */
