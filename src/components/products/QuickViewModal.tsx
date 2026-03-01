@@ -166,7 +166,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
 
             {/* Acciones */}
             <div className="space-y-3 mt-auto">
-              <AddToCartButton product={product as any} className="w-full" />
+              <AddToCartButton product={product as any} />
 
               <Link
                 href={`/productos/${product.slug}`}
