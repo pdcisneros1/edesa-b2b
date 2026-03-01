@@ -95,7 +95,7 @@ export async function setCsrfCookie(
   cookieStore.set(CSRF_COOKIE_NAME, token, {
     httpOnly: false, // IMPORTANTE: Frontend debe poder leer esta cookie
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict', // Protección CSRF máxima
+    sameSite: 'lax', // Cambiado de strict a lax para mejor compatibilidad
     path: '/',
     expires,
   });
@@ -159,13 +159,25 @@ export function validateCsrfToken(request: NextRequest): boolean {
   const tokenFromCookie = getCsrfTokenFromCookie(request);
   const tokenFromHeader = getCsrfTokenFromHeader(request);
 
+  console.log('🔐 CSRF Validation:');
+  console.log('  Cookie token:', tokenFromCookie ? `${tokenFromCookie.substring(0, 10)}...` : 'MISSING');
+  console.log('  Header token:', tokenFromHeader ? `${tokenFromHeader.substring(0, 10)}...` : 'MISSING');
+
   // Ambos tokens deben existir
   if (!tokenFromCookie || !tokenFromHeader) {
+    console.error('❌ CSRF validation failed: Missing token');
     return false;
   }
 
   // Ambos tokens deben ser idénticos (comparación en tiempo constante)
-  return constantTimeEqual(tokenFromCookie, tokenFromHeader);
+  const isValid = constantTimeEqual(tokenFromCookie, tokenFromHeader);
+  console.log('  Tokens match:', isValid);
+
+  if (!isValid) {
+    console.error('❌ CSRF validation failed: Tokens do not match');
+  }
+
+  return isValid;
 }
 
 /**

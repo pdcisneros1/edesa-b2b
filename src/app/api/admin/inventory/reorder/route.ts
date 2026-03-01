@@ -36,10 +36,16 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
-  if (!auth.authorized) return auth.response;
+  if (!auth.authorized) {
+    console.error('❌ No autorizado');
+    return auth.response;
+  }
 
   const csrfError = requireCsrfToken(request);
-  if (csrfError) return csrfError;
+  if (csrfError) {
+    console.error('❌ Error CSRF en inventory/reorder');
+    return csrfError;
+  }
 
   try {
     console.log('🔍 Buscando productos con stock bajo...');
