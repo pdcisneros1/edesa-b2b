@@ -193,7 +193,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                 </td>
                 {products.map((product) => (
                   <td key={product.id} className="p-3 text-center">
-                    <AddToCartButton product={product} size="sm" className="w-full" />
+                    <AddToCartButton product={product as any} size="sm" className="w-full" />
                   </td>
                 ))}
               </tr>
