@@ -63,7 +63,7 @@ export function ProductList({ products }: ProductListProps) {
       {products.map((product) => {
         const image = product.images?.[0];
         const hasPromotion = product.promotions && product.promotions.length > 0;
-        const promotion = hasPromotion ? product.promotions[0].promotion : null;
+        const promotion = hasPromotion ? product.promotions?.[0].promotion : null;
         const displayPrice = product.wholesalePrice && product.wholesalePrice > 0
           ? product.wholesalePrice
           : product.price;
