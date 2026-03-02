@@ -35,6 +35,8 @@ model User {
   abandonedCarts   AbandonedCart[]
   // 🛒 NUEVO: Relación con carrito activo persistente (multi-dispositivo)
   carts          Cart[]
+  // ❤️ NUEVO: Relación con lista de deseos/favoritos
+  wishlist       Wishlist[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -110,6 +112,7 @@ model Product {
   isNew            Boolean                @default(false)
   purchaseItems    PurchaseOrderItem[]
   promotions       PromotionProduct[]
+  wishlistItems    Wishlist[]  // ❤️ NUEVO: Relación con listas de deseos
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 
@@ -445,4 +448,22 @@ enum AbandonedCartStatus {
   ABANDONED   // Carrito abandonado (> 1 hora, < 7 días)
   RECOVERED   // Convertido en orden
   EXPIRED     // Muy antiguo (> 7 días)
+}
+
+// ============================================================================
+// LISTAS DE DESEOS / FAVORITOS (Solo usuarios autenticados)
+// ============================================================================
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  // Un usuario solo puede tener un producto una vez en su wishlist
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
 }

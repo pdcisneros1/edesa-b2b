@@ -12,6 +12,7 @@ import { useCompare } from '@/context/CompareContext';
 import { toast } from 'sonner';
 import { PriceGate } from './PriceGate';
 import { QuickViewModal } from './QuickViewModal';
+import { FavoriteButton } from './FavoriteButton';
 import { calculateDiscount } from '@/lib/format';
 import {
   getActivePromotionForProduct,
@@ -80,19 +81,31 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* Image area */}
       <Link href={`/productos/${product.slug}`} className="block relative">
         <div className="relative aspect-square overflow-hidden bg-gray-50">
-          {/* Compare checkbox */}
-          <button
-            onClick={handleCompareToggle}
-            className={`absolute right-3 top-3 z-20 p-2 rounded-lg transition-all duration-200 ${
-              isInComparison
-                ? 'bg-primary text-white shadow-lg scale-110'
-                : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary shadow-md'
-            }`}
-            aria-label={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
-            title={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
-          >
-            <GitCompare className="h-4 w-4" />
-          </button>
+          {/* Action buttons - Top right */}
+          <div className="absolute right-3 top-3 z-20 flex gap-2">
+            {/* Favorite button */}
+            <div className="p-2 rounded-lg bg-white/90 hover:bg-white shadow-md transition-all">
+              <FavoriteButton
+                productId={product.id}
+                productName={product.name}
+                size="sm"
+              />
+            </div>
+
+            {/* Compare checkbox */}
+            <button
+              onClick={handleCompareToggle}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                isInComparison
+                  ? 'bg-primary text-white shadow-lg scale-110'
+                  : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary shadow-md'
+              }`}
+              aria-label={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
+              title={isInComparison ? 'Remover de comparación' : 'Agregar a comparación'}
+            >
+              <GitCompare className="h-4 w-4" />
+            </button>
+          </div>
 
           {/* Badges */}
           <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
