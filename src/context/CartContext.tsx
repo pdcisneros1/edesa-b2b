@@ -34,27 +34,156 @@ function calculateTotals(items: CartItem[]): { subtotal: number; total: number }
   return { subtotal, total };
 }
 
+/**
+ * 🔀 Estrategia de merge de carritos (BD + localStorage)
+ * Si un producto existe en ambos, sumar las cantidades
+ */
+function mergeCartsStrategy(dbCart: Cart, localCart: Cart): Cart {
+  const mergedItems = [...dbCart.items];
+
+  // Agregar items de localStorage que no estén en BD
+  for (const localItem of localCart.items) {
+    const existingIndex = mergedItems.findIndex(
+      (item) => item.productId === localItem.productId
+    );
+
+    if (existingIndex !== -1) {
+      // Producto ya existe, sumar cantidades
+      const existingItem = mergedItems[existingIndex];
+      const newQuantity = existingItem.quantity + localItem.quantity;
+      mergedItems[existingIndex] = {
+        ...existingItem,
+        quantity: newQuantity,
+        subtotal: existingItem.price * newQuantity,
+      };
+    } else {
+      // Producto nuevo, agregarlo
+      mergedItems.push(localItem);
+    }
+  }
+
+  const { subtotal, total } = calculateTotals(mergedItems);
+
+  return {
+    ...dbCart,
+    items: mergedItems,
+    subtotal,
+    total,
+    updatedAt: new Date(),
+  };
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart>(createEmptyCart());
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoadingFromDB, setIsLoadingFromDB] = useState(false);
   const { session } = useAuth();
 
-  // Load cart from localStorage on mount
+  // 🛒 NUEVO: Cargar carrito desde BD cuando hay sesión
   useEffect(() => {
-    const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-    if (storedCart) {
-      try {
-        const parsed = JSON.parse(storedCart);
-        // Convert date strings back to Date objects
-        parsed.createdAt = new Date(parsed.createdAt);
-        parsed.updatedAt = new Date(parsed.updatedAt);
-        setCart(parsed);
-      } catch (error) {
-        console.error('Failed to parse cart from localStorage:', error);
+    const loadCartFromDatabase = async () => {
+      if (!session?.userId) {
+        console.log('⏳ No hay sesión de usuario, usando solo localStorage');
+        return;
       }
+
+      if (isLoadingFromDB) {
+        return; // Evitar carga duplicada
+      }
+
+      setIsLoadingFromDB(true);
+      console.log('🔄 Cargando carrito desde BD para usuario:', session.userId);
+
+      try {
+        const response = await fetch('/api/cart/load');
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.cart) {
+            console.log('✅ Carrito cargado desde BD:', data.cart.items.length, 'items');
+
+            // Obtener carrito de localStorage
+            const localStorageCart = localStorage.getItem(CART_STORAGE_KEY);
+            let localCart: Cart | null = null;
+
+            if (localStorageCart) {
+              try {
+                const parsed = JSON.parse(localStorageCart);
+                if (parsed) {
+                  parsed.createdAt = new Date(parsed.createdAt);
+                  parsed.updatedAt = new Date(parsed.updatedAt);
+                  localCart = parsed;
+                }
+              } catch (error) {
+                console.error('Error parseando carrito local:', error);
+              }
+            }
+
+            // 🔀 MERGE: Combinar carrito BD + localStorage
+            if (localCart && localCart.items.length > 0) {
+              console.log('🔀 Haciendo merge de carrito BD + localStorage');
+              const mergedCart = mergeCartsStrategy(data.cart, localCart);
+              setCart(mergedCart);
+            } else {
+              // Solo usar carrito de BD
+              setCart(data.cart);
+            }
+          } else {
+            console.log('📭 No hay carrito en BD, usando localStorage');
+            // Cargar desde localStorage normalmente
+            const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+            if (storedCart) {
+              try {
+                const parsed = JSON.parse(storedCart);
+                parsed.createdAt = new Date(parsed.createdAt);
+                parsed.updatedAt = new Date(parsed.updatedAt);
+                setCart(parsed);
+              } catch (error) {
+                console.error('Failed to parse cart from localStorage:', error);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error al cargar carrito desde BD:', error);
+        // Fallback a localStorage
+        const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+        if (storedCart) {
+          try {
+            const parsed = JSON.parse(storedCart);
+            parsed.createdAt = new Date(parsed.createdAt);
+            parsed.updatedAt = new Date(parsed.updatedAt);
+            setCart(parsed);
+          } catch (error) {
+            console.error('Failed to parse cart from localStorage:', error);
+          }
+        }
+      } finally {
+        setIsLoadingFromDB(false);
+        setIsInitialized(true);
+      }
+    };
+
+    // Si hay sesión, cargar desde BD
+    if (session?.userId) {
+      loadCartFromDatabase();
+    } else {
+      // Sin sesión, solo localStorage
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      if (storedCart) {
+        try {
+          const parsed = JSON.parse(storedCart);
+          parsed.createdAt = new Date(parsed.createdAt);
+          parsed.updatedAt = new Date(parsed.updatedAt);
+          setCart(parsed);
+        } catch (error) {
+          console.error('Failed to parse cart from localStorage:', error);
+        }
+      }
+      setIsInitialized(true);
     }
-    setIsInitialized(true);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.userId]); // Re-cargar cuando cambia la sesión
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -82,40 +211,51 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // 📊 TRACKING: Sincronizar carrito a DB cuando cambie
+  // 🔄 SINCRONIZACIÓN DUAL: Persistencia + Tracking
   useEffect(() => {
-    // Solo trackear si el carrito está inicializado y tiene items
-    if (!isInitialized || cart.items.length === 0) return;
+    // Solo sincronizar si el carrito está inicializado
+    if (!isInitialized) return;
 
-    // ⚠️ CRÍTICO: Solo trackear si hay sesión con userId o email
+    // ⚠️ CRÍTICO: Solo sincronizar si hay sesión con userId
     if (!session?.userId && !session?.email) {
-      console.log('⏳ Esperando sesión de usuario para trackear carrito...');
+      console.log('⏳ Sin sesión de usuario, sin sincronización');
       return;
     }
 
     const syncToDatabase = async () => {
       try {
-        const response = await fetch('/api/cart/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: session.userId,
-            customerEmail: session.email,
-            customerName: session.name,
-            items: cart.items,
-            subtotal: cart.subtotal,
-            total: cart.total,
-          }),
-        });
+        // 1️⃣ PERSISTENCIA: Guardar carrito para multi-dispositivo (tabla Cart)
+        if (session.userId) {
+          await fetch('/api/cart/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: cart.items,
+              subtotal: cart.subtotal,
+              total: cart.total,
+            }),
+          });
+          console.log('💾 Carrito persistido en BD (multi-dispositivo)');
+        }
 
-        if (response.ok) {
-          console.log('✅ Carrito sincronizado a BD');
-        } else {
-          const data = await response.json();
-          console.error('❌ Error tracking cart:', data.error);
+        // 2️⃣ TRACKING: Para recovery emails (tabla AbandonedCart)
+        if (cart.items.length > 0) {
+          await fetch('/api/cart/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: session.userId,
+              customerEmail: session.email,
+              customerName: session.name,
+              items: cart.items,
+              subtotal: cart.subtotal,
+              total: cart.total,
+            }),
+          });
+          console.log('📊 Carrito trackeado para abandonment analytics');
         }
       } catch (error) {
-        console.error('❌ Error tracking cart:', error);
+        console.error('❌ Error al sincronizar carrito:', error);
       }
     };
 
