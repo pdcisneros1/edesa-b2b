@@ -119,13 +119,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               }
             }
 
-            // 🔀 MERGE: Combinar carrito BD + localStorage
+            // 🔀 MERGE INTELIGENTE: Solo si localStorage es más reciente
             if (localCart && localCart.items.length > 0) {
-              console.log('🔀 Haciendo merge de carrito BD + localStorage');
-              const mergedCart = mergeCartsStrategy(data.cart, localCart);
-              setCart(mergedCart);
+              const dbDate = new Date(data.cart.updatedAt).getTime();
+              const localDate = new Date(localCart.updatedAt).getTime();
+
+              // Si localStorage es más nuevo (modificado después de la última sync)
+              if (localDate > dbDate) {
+                console.log('🔀 Merge: localStorage más reciente, combinando...');
+                const mergedCart = mergeCartsStrategy(data.cart, localCart);
+                setCart(mergedCart);
+              } else {
+                // BD es más reciente o igual, usar solo BD
+                console.log('✅ Usando carrito de BD (más reciente)');
+                setCart(data.cart);
+              }
             } else {
               // Solo usar carrito de BD
+              console.log('✅ Usando carrito de BD (único)');
               setCart(data.cart);
             }
           } else {
